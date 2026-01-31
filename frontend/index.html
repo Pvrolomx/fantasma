@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FANTASMA - Early Warning System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 50%, #0a0a1a 100%);
+            min-height: 100vh;
+        }
+        
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .score-ring {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .score-ring::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            padding: 8px;
+            background: conic-gradient(
+                var(--ring-color, #22c55e) calc(var(--score, 0) * 1%),
+                rgba(255,255,255,0.1) 0
+            );
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .signal-bar {
+            transition: width 0.5s ease-out;
+        }
+    </style>
+</head>
+<body class="text-white p-4 md:p-8">
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <header class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="text-3xl font-bold flex items-center gap-3">
+                    <span class="text-4xl">👻</span>
+                    FANTASMA
+                </h1>
+                <p class="text-gray-400 mt-1">Sistema de Early Warning - Crisis MXN</p>
+            </div>
+            <div class="text-right">
+                <div id="timestamp" class="text-sm text-gray-400 mono"></div>
+                <button onclick="loadData()" class="mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm transition">
+                    🔄 Actualizar
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Score -->
+        <div class="glass rounded-2xl p-8 mb-8">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-8">
+                <!-- Score Ring -->
+                <div class="text-center">
+                    <div id="scoreRing" class="score-ring mx-auto" style="--score: 0; --ring-color: #22c55e;">
+                        <div class="text-center">
+                            <div id="scoreValue" class="text-5xl font-bold mono">--</div>
+                            <div class="text-gray-400 text-sm">/100</div>
+                        </div>
+                    </div>
+                    <div id="alertLevel" class="mt-4 text-2xl font-bold">Cargando...</div>
+                    <div id="alertAction" class="text-gray-400 mt-1">--</div>
+                </div>
+
+                <!-- Breakdown -->
+                <div class="flex-1 w-full md:w-auto">
+                    <h3 class="text-lg font-semibold mb-4">Desglose</h3>
+                    
+                    <!-- Core MXN -->
+                    <div class="mb-4">
+                        <div class="flex justify-between text-sm mb-1">
+                            <span>🇲🇽 Señales Core MXN</span>
+                            <span id="coreScore" class="mono">--/65</span>
+                        </div>
+                        <div class="h-3 bg-gray-700 rounded-full overflow-hidden">
+                            <div id="coreBar" class="signal-bar h-full bg-blue-500 rounded-full" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Global Overlay -->
+                    <div class="mb-4">
+                        <div class="flex justify-between text-sm mb-1">
+                            <span>🌍 Señales Globales</span>
+                            <span id="globalScore" class="mono">--/35</span>
+                        </div>
+                        <div class="h-3 bg-gray-700 rounded-full overflow-hidden">
+                            <div id="globalBar" class="signal-bar h-full bg-purple-500 rounded-full" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Active Signals -->
+                    <div class="mt-6 p-4 bg-black/30 rounded-lg">
+                        <div class="flex items-center gap-2 text-sm">
+                            <span class="text-yellow-400">⚡</span>
+                            <span>Señales activas:</span>
+                            <span id="activeCount" class="font-bold">--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Signals Grid -->
+        <div class="grid md:grid-cols-2 gap-6">
+            <!-- Core Signals -->
+            <div class="glass rounded-xl p-6">
+                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <span>🇲🇽</span> Señales Core MXN
+                </h3>
+                <div id="coreSignals" class="space-y-3">
+                    <div class="text-gray-400 text-sm">Cargando...</div>
+                </div>
+            </div>
+
+            <!-- Global Signals -->
+            <div class="glass rounded-xl p-6">
+                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <span>🌍</span> Señales Globales
+                </h3>
+                <div id="globalSignals" class="space-y-3">
+                    <div class="text-gray-400 text-sm">Cargando...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-8 text-center text-gray-500 text-sm">
+            <p>FANTASMA v1.0 • Datos actualizados cada 6:45 AM CT</p>
+            <p class="mt-1">Fuentes: Banxico, CFTC, FRED, Yahoo Finance</p>
+        </footer>
+    </div>
+
+    <script>
+        // API endpoint - cambiar en producción
+        const API_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:8000'
+            : '/api';
+
+        // Colores por nivel
+        const LEVEL_COLORS = {
+            'BAJO': '#22c55e',
+            'MODERADO': '#eab308',
+            'ELEVADO': '#f97316',
+            'ALTO': '#ef4444',
+            'CRÍTICO': '#1f2937'
+        };
+
+        // Nombres amigables de señales
+        const SIGNAL_NAMES = {
+            'C1_FIX': 'Tipo de Cambio FIX',
+            'C2_TIIE': 'TIIE 28 días',
+            'C3_CFTC': 'Posiciones CFTC',
+            'C4_RESERVAS': 'Reservas Internacionales',
+            'C5_SPREAD': 'Spread MX-US',
+            'G1_VIX': 'VIX',
+            'G2_DXY': 'Dollar Index',
+            'G3_US10Y': 'US 10Y Yield',
+            'G4_HY_SPREAD': 'HY Spread',
+            'G5_COPPER': 'Cobre',
+            'G6_GOOGLE_TRENDS': 'Google Trends',
+            'G7_VOLATILITY': 'Volatilidad MXN'
+        };
+
+        function renderSignal(signal) {
+            const name = SIGNAL_NAMES[signal.signal] || signal.signal;
+            const score = signal.score || 0;
+            const maxScore = signal.max_score || 10;
+            const pct = (score / maxScore) * 100;
+            
+            // Determinar color basado en score
+            let barColor = 'bg-green-500';
+            if (pct > 66) barColor = 'bg-red-500';
+            else if (pct > 33) barColor = 'bg-yellow-500';
+
+            // Valor principal a mostrar
+            let mainValue = '--';
+            if (signal.value !== undefined) mainValue = signal.value;
+            else if (signal.daily_change_pct !== undefined) mainValue = `${signal.daily_change_pct}%`;
+            else if (signal.spread_bps !== undefined) mainValue = `${signal.spread_bps} bps`;
+            else if (signal.volatility_20d_annualized !== undefined) mainValue = `${signal.volatility_20d_annualized}%`;
+
+            return `
+                <div class="p-3 bg-black/20 rounded-lg">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm">${name}</span>
+                        <span class="mono text-sm ${score > 0 ? 'text-yellow-400' : 'text-gray-500'}">${score}/${maxScore}</span>
+                    </div>
+                    <div class="h-2 bg-gray-700 rounded-full overflow-hidden">
+                        <div class="h-full ${barColor} rounded-full transition-all" style="width: ${pct}%"></div>
+                    </div>
+                    <div class="text-xs text-gray-400 mt-1 mono">${mainValue}</div>
+                </div>
+            `;
+        }
+
+        async function loadData() {
+            try {
+                const response = await fetch(`${API_URL}/score`);
+                const data = await response.json();
+                
+                // Update timestamp
+                document.getElementById('timestamp').textContent = 
+                    new Date(data.timestamp).toLocaleString('es-MX');
+
+                // Update score ring
+                const score = data.total_score;
+                const color = LEVEL_COLORS[data.alert_level] || '#22c55e';
+                const ring = document.getElementById('scoreRing');
+                ring.style.setProperty('--score', score);
+                ring.style.setProperty('--ring-color', color);
+                
+                document.getElementById('scoreValue').textContent = score;
+                document.getElementById('alertLevel').textContent = 
+                    `${data.alert_emoji} ${data.alert_level}`;
+                document.getElementById('alertLevel').style.color = color;
+                document.getElementById('alertAction').textContent = data.recommended_action;
+
+                // Update breakdown
+                const coreScore = data.breakdown.core_mxn.score;
+                const globalScore = data.breakdown.global_overlay.score;
+                
+                document.getElementById('coreScore').textContent = `${coreScore}/65`;
+                document.getElementById('coreBar').style.width = `${(coreScore/65)*100}%`;
+                
+                document.getElementById('globalScore').textContent = `${globalScore}/35`;
+                document.getElementById('globalBar').style.width = `${(globalScore/35)*100}%`;
+
+                document.getElementById('activeCount').textContent = data.active_signals;
+
+                // Render signals
+                document.getElementById('coreSignals').innerHTML = 
+                    data.breakdown.core_mxn.signals.map(renderSignal).join('');
+                document.getElementById('globalSignals').innerHTML = 
+                    data.breakdown.global_overlay.signals.map(renderSignal).join('');
+
+            } catch (error) {
+                console.error('Error loading data:', error);
+                document.getElementById('alertLevel').textContent = '⚠️ Error de conexión';
+                document.getElementById('alertAction').textContent = 'Verifica la API';
+            }
+        }
+
+        // Load on start
+        loadData();
+
+        // Auto-refresh every 5 minutes
+        setInterval(loadData, 5 * 60 * 1000);
+    </script>
+</body>
+</html>
