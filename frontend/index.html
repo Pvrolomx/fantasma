@@ -2,6 +2,13 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#f59e0b">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="FANTASMA">
+    <link rel="apple-touch-icon" href="/icon-192.png">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FANTASMA - Early Warning System</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -279,5 +286,44 @@
         // Auto-refresh every 5 minutes
         setInterval(loadData, 5 * 60 * 1000);
     </script>
+
+    <!-- PWA Install Button -->
+    <div id="installBanner" style="display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:linear-gradient(135deg, #f59e0b, #d97706); padding:12px 24px; border-radius:50px; box-shadow:0 4px 20px rgba(245,158,11,0.4); z-index:1000; cursor:pointer;" onclick="installPWA()">
+        <span style="color:#0a0a1a; font-weight:bold; font-size:14px;">📲 Instalar App</span>
+    </div>
+
+    <script>
+        // Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => console.log('SW registered'))
+                .catch(err => console.log('SW error:', err));
+        }
+
+        // PWA Install
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('installBanner').style.display = 'block';
+        });
+
+        function installPWA() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((result) => {
+                    if (result.outcome === 'accepted') {
+                        document.getElementById('installBanner').style.display = 'none';
+                    }
+                    deferredPrompt = null;
+                });
+            }
+        }
+
+        window.addEventListener('appinstalled', () => {
+            document.getElementById('installBanner').style.display = 'none';
+        });
+    </script>
+
 </body>
 </html>
