@@ -6,11 +6,19 @@
       "use": "@vercel/python"
     },
     {
+      "src": "api/alert.py",
+      "use": "@vercel/python"
+    },
+    {
       "src": "frontend/**",
       "use": "@vercel/static"
     }
   ],
   "routes": [
+    {
+      "src": "/api/alert",
+      "dest": "/api/alert.py"
+    },
     {
       "src": "/api/score",
       "dest": "/api/index.py"
