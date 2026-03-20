@@ -1,11 +1,11 @@
 {
-  "name": "FANTASMA - Early Warning MXN",
-  "short_name": "FANTASMA",
-  "description": "Sistema de alerta temprana para crisis del peso mexicano",
+  "name": "OBSERVATORIO - Panel de Crisis",
+  "short_name": "Observatorio",
+  "description": "Panel de Control de la Realidad - Monitoreo de crisis global y local",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0a1a",
-  "theme_color": "#f59e0b",
+  "theme_color": "#dc2626",
   "orientation": "portrait",
   "icons": [
     {
