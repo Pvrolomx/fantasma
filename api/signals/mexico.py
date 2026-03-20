@@ -19,15 +19,15 @@ async def get_m1_usdmxn() -> Tuple[float, Dict]:
     if len(closes) >= 5 and closes[-5] > 0:
         weekly_change_pct = ((current - closes[-5]) / closes[-5]) * 100
     score = 0
-    if current > 23: score = 15
-    elif current > 22: score = 12
-    elif current > 21: score = 8
-    elif current > 20.5: score = 5
+    if current > 22: score = 15
+    elif current > 21: score = 12
+    elif current > 20.5: score = 8
+    elif current > 20: score = 5
     if abs(weekly_change_pct) > 3: score = min(score + 3, 15)
     return score, {
         "signal": "M1_USDMXN", "value": round(current, 4),
         "weekly_change_pct": round(weekly_change_pct, 2),
-        "alert_threshold": 21.0,
+        "alert_threshold": 20.0,
         "score": score, "max_score": 15
     }
 
