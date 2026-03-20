@@ -48,7 +48,7 @@ async def get_score():
     try:
         report = await run_scoring()
         try:
-            save_snapshot(report)
+            await save_snapshot(report)
         except Exception:
             pass  # Don't fail score if history save fails
         return JSONResponse(content=report)
@@ -85,8 +85,8 @@ async def check_alert(score: int):
 async def get_history(days: int = 30):
     """Historico de scores - ultimos N dias."""
     try:
-        data = load_history(days=days)
-        summary = get_daily_summary()
+        data = await load_history(days=days)
+        summary = get_daily_summary(data)
         return {"days_requested": days, "data_points": len(data), "history": data, "summary": summary}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

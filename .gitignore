@@ -1,2 +1,6 @@
 .vercel
 data/
+__pycache__/
+*.pyc
+data/
+.env

@@ -9,7 +9,7 @@ import os
 from datetime import datetime, timedelta
 from typing import Dict, Tuple
 
-FRED_API_KEY = os.getenv("FRED_API_KEY", "24807190f81e3b6e3abee695e38e63f6")  # Gratis en fred.stlouisfed.org
+FRED_API_KEY = os.getenv("FRED_API_KEY", "")  # Set in .env or Vercel env vars  # Gratis en fred.stlouisfed.org
 BASE_URL = "https://api.stlouisfed.org/fred/series/observations"
 
 async def fetch_fred_series(series_id: str, days: int = 30) -> list:

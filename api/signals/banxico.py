@@ -9,7 +9,7 @@ import os
 from datetime import datetime, timedelta
 from typing import Dict, Tuple
 
-BANXICO_TOKEN = os.getenv("BANXICO_TOKEN", "40418d20484c683fc7d603806b8bed5433e43ddba807b451b83cb2c09776c650")  # Se configura en env
+BANXICO_TOKEN = os.getenv("BANXICO_TOKEN", "")  # Set in .env or Vercel env vars
 BASE_URL = "https://www.banxico.org.mx/SieAPIRest/service/v1/series"
 
 async def fetch_series(series_id: str, days: int = 30) -> list:
