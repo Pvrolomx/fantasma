@@ -80,7 +80,7 @@ async def collect_all_signals() -> Tuple[int, List[Dict]]:
 
 
 def generate_report(score_raw: int, signals: list, protocolo: dict) -> dict:
-    normalized = min(100, round((score_raw / MAX_RAW_SCORE) * 100))
+    normalized = round((score_raw / MAX_RAW_SCORE) * 100)
     alert = get_alert_level(normalized)
 
     core = [s for s in signals if s.get("signal", "").startswith("C")]

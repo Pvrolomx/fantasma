@@ -111,7 +111,8 @@
     function signalRow(s) {
         if (s.error) return `<div class="flex justify-between text-gray-500"><span>${s.signal}</span><span>Error</span></div>`;
         const pct = s.max_score ? Math.round((s.score/s.max_score)*100) : 0;
-        const color = pct > 60 ? 'text-red-400' : pct > 30 ? 'text-amber-400' : 'text-green-400';
+        const overflow = s.score > s.max_score;
+        const color = overflow ? 'text-red-500 font-black' : pct > 60 ? 'text-red-400' : pct > 30 ? 'text-amber-400' : 'text-green-400';
         const val = s.value !== undefined ? s.value : s.brent || s.spread || '—';
         return `<div class="flex justify-between items-center">
             <span class="text-gray-300">${s.signal}</span>
@@ -124,11 +125,12 @@
 
     function renderModuleBar(name, score, max) {
         const pct = Math.round((score/max)*100);
-        const color = pct > 60 ? 'bg-red-500' : pct > 30 ? 'bg-amber-500' : 'bg-green-500';
+        const ovf = pct > 100;
+        const color = ovf ? 'bg-red-600' : pct > 60 ? 'bg-red-500' : pct > 30 ? 'bg-amber-500' : 'bg-green-500';
         return `<div>
             <div class="text-xs text-gray-400 mb-1">${name}</div>
             <div class="w-full bg-white/10 rounded-full h-2">
-                <div class="${color} h-2 rounded-full" style="width:${pct}%"></div>
+                <div class="${color} h-2 rounded-full" style="width:${Math.min(pct,100)}%"></div>
             </div>
             <div class="text-xs mono text-gray-500 mt-0.5">${score}/${max}</div>
         </div>`;
@@ -144,7 +146,8 @@
 
             // Score ring
             const ring = document.getElementById('score-ring');
-            const color = COLORS[d.alert_level] || '#22c55e';
+            const isOver100 = d.total_score > 100;
+            const color = isOver100 ? '#7f1d1d' : (COLORS[d.alert_level] || '#22c55e');
             ring.style.setProperty('--score', d.total_score);
             ring.style.setProperty('--ring-color', color);
             document.getElementById('score-value').textContent = d.total_score;

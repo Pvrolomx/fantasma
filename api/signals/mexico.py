@@ -19,11 +19,14 @@ async def get_m1_usdmxn() -> Tuple[float, Dict]:
     if len(closes) >= 5 and closes[-5] > 0:
         weekly_change_pct = ((current - closes[-5]) / closes[-5]) * 100
     score = 0
-    if current > 22: score = 15
+    if current > 25: score = 25
+    elif current > 23: score = 20
+    elif current > 22: score = 15
     elif current > 21: score = 12
     elif current > 20.5: score = 8
     elif current > 20: score = 5
-    if abs(weekly_change_pct) > 3: score = min(score + 3, 15)
+    if abs(weekly_change_pct) > 3: score = score + 3
+    if abs(weekly_change_pct) > 5: score = score + 5  # extreme move
     return score, {
         "signal": "M1_USDMXN", "value": round(current, 4),
         "weekly_change_pct": round(weekly_change_pct, 2),
@@ -43,7 +46,9 @@ async def get_m2_corn() -> Tuple[float, Dict]:
     if len(closes) >= 20 and closes[0] > 0:
         monthly_change_pct = ((current - closes[0]) / closes[0]) * 100
     score = 0
-    if monthly_change_pct > 20: score = 10
+    if monthly_change_pct > 40: score = 18
+    elif monthly_change_pct > 30: score = 14
+    elif monthly_change_pct > 20: score = 10
     elif monthly_change_pct > 10: score = 7
     elif monthly_change_pct > 5: score = 3
     return score, {

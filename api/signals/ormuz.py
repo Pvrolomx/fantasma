@@ -24,11 +24,13 @@ async def get_o1_brent() -> Tuple[float, Dict]:
     if len(closes) >= 5 and closes[-5] > 0:
         weekly_change_pct = ((current - closes[-5]) / closes[-5]) * 100
     score = 0
-    if current > 110: score = 20
+    if current > 130: score = 30
+    elif current > 120: score = 25
+    elif current > 110: score = 20
     elif current > 100: score = 15
     elif current > 90: score = 10
     elif current > 80: score = 5
-    if abs(weekly_change_pct) > 10: score = min(score + 5, 20)
+    if abs(weekly_change_pct) > 10: score = score + 5  # no cap, allows overflow
     return score, {
         "signal": "O1_BRENT", "value": round(current, 2),
         "weekly_change_pct": round(weekly_change_pct, 2),
@@ -49,10 +51,12 @@ async def get_o2_gas_europe() -> Tuple[float, Dict]:
     if len(closes) >= 5 and closes[-5] > 0:
         weekly_change_pct = ((current - closes[-5]) / closes[-5]) * 100
     score = 0
-    if current > 70: score = 10
+    if current > 100: score = 15
+    elif current > 70: score = 10
     elif current > 50: score = 7
     elif current > 35: score = 3
-    if abs(weekly_change_pct) > 15: score = min(score + 3, 10)
+    if abs(weekly_change_pct) > 15: score = score + 3
+    if weekly_change_pct > 30: score = score + 5  # extreme spike
     return score, {
         "signal": "O2_GAS_EU", "value": round(current, 2),
         "weekly_change_pct": round(weekly_change_pct, 2),
@@ -115,7 +119,8 @@ async def get_o5_war_risk() -> Tuple[float, Dict]:
     wti = wti_data.get("current", 0)
     spread = brent - wti
     score = 0
-    if spread > 12: score = 10
+    if spread > 20: score = 15
+    elif spread > 12: score = 10
     elif spread > 8: score = 7
     elif spread > 5: score = 3
     return score, {
