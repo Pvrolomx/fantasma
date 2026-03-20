@@ -1,12 +1,13 @@
 """
-FANTASMA API
-Sistema de Early Warning - Crisis Económica MXN
+FANTASMA / OBSERVATORIO API v2.0
+Sistema de Early Warning + Modulo de Coherencia
 
 Endpoints:
-- GET /           → Health check
-- GET /score      → Score actual con todas las señales
-- GET /signals    → Solo las señales sin scoring
-- GET /history    → Histórico de scores (requiere Supabase)
+- GET /           -> Health check
+- GET /score      -> Score completo con 4 modulos + Protocolo 0
+- GET /signals    -> Solo senales sin scoring
+- GET /protocolo  -> Solo Protocolo 0 (coherencia)
+- GET /history    -> Historico (requiere Supabase)
 """
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,17 +16,17 @@ from datetime import datetime
 import os
 
 from scoring import run_scoring, collect_all_signals, get_alert_level
+from protocolo_cero import check_protocolo_cero
 
 app = FastAPI(
-    title="FANTASMA API",
-    description="Sistema de Early Warning para Crisis Económica MXN",
-    version="1.0.0"
+    title="FANTASMA / OBSERVATORIO API",
+    description="Early Warning System + Protocolo 0 de Coherencia",
+    version="2.0.0"
 )
 
-# CORS para frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # En producción, especificar dominios
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -33,20 +34,16 @@ app.add_middleware(
 
 @app.get("/")
 async def root():
-    """Health check."""
     return {
         "status": "online",
-        "service": "FANTASMA",
-        "version": "1.0.0",
+        "service": "FANTASMA / OBSERVATORIO",
+        "version": "2.0.0",
+        "modules": ["core_mxn", "global_overlay", "ormuz_coreografia", "mexico_local", "protocolo_0"],
         "timestamp": datetime.utcnow().isoformat()
     }
 
 @app.get("/score")
 async def get_score():
-    """
-    Obtiene el score actual con todas las señales.
-    Este es el endpoint principal.
-    """
     try:
         report = await run_scoring()
         return JSONResponse(content=report)
@@ -55,63 +52,38 @@ async def get_score():
 
 @app.get("/signals")
 async def get_signals():
-    """Obtiene solo las señales sin el reporte completo."""
     try:
         score, signals = await collect_all_signals()
-        return {
-            "timestamp": datetime.utcnow().isoformat(),
-            "signals": signals,
-            "raw_score": score
-        }
+        return {"timestamp": datetime.utcnow().isoformat(), "signals": signals, "raw_score": score}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/protocolo")
+async def get_protocolo():
+    """Protocolo 0: Verifica coherencia de datos."""
+    try:
+        _, signals = await collect_all_signals()
+        protocolo = await check_protocolo_cero(signals)
+        return JSONResponse(content=protocolo)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/alert/{score}")
 async def check_alert(score: int):
-    """Verifica qué nivel de alerta corresponde a un score dado."""
     if not 0 <= score <= 100:
         raise HTTPException(status_code=400, detail="Score must be between 0 and 100")
-    
     alert = get_alert_level(score)
-    return {
-        "score": score,
-        "level": alert["level"],
-        "emoji": alert["emoji"],
-        "action": alert["action"]
-    }
+    return {"score": score, "level": alert["level"], "emoji": alert["emoji"], "action": alert["action"]}
 
-# Supabase integration (opcional)
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 @app.get("/history")
 async def get_history(days: int = 30):
-    """
-    Obtiene histórico de scores.
-    Requiere configuración de Supabase.
-    """
     if not SUPABASE_URL or not SUPABASE_KEY:
-        return {
-            "error": "Supabase not configured",
-            "note": "Set SUPABASE_URL and SUPABASE_KEY environment variables"
-        }
-    
-    # TODO: Implementar fetch de Supabase
-    return {
-        "message": "History endpoint - requires Supabase setup",
-        "days_requested": days
-    }
+        return {"error": "Supabase not configured", "note": "Set SUPABASE_URL and SUPABASE_KEY"}
+    return {"message": "History endpoint - requires Supabase setup", "days_requested": days}
 
-@app.post("/webhook/telegram")
-async def telegram_webhook():
-    """
-    Webhook para notificaciones Telegram.
-    Se activa cuando score > 40.
-    """
-    # TODO: Implementar integración Telegram
-    return {"status": "webhook received"}
-
-# Para desarrollo local
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

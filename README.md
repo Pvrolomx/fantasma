@@ -1,103 +1,65 @@
-# 👻 FANTASMA v1.0
+# OBSERVATORIO (ex-FANTASMA) v2.0
 
-## Sistema de Early Warning - Crisis Económica MXN
+## Panel de Control de la Realidad — Crisis 2026
 
-Sistema automatizado de monitoreo que genera un score de riesgo 0-100 para anticipar crisis cambiaria/económica en México.
+Sistema de monitoreo personal que conecta la geopolitica global
+con tu realidad operativa en Mexico/Puerto Vallarta.
 
-## 📊 Señales Monitoreadas
+## 4 Modulos
 
-### Core MXN (65 pts máx)
-| Señal | Fuente | Puntos |
-|-------|--------|--------|
-| C1: Tipo de Cambio FIX | Banxico API | 20 |
-| C2: TIIE 28 días | Banxico API | 10 |
-| C3: Posiciones CFTC MXN | CFTC COT | 15 |
-| C4: Reservas Internacionales | Banxico API | 10 |
-| C5: Spread MX-US Yields | FRED + Banxico | 10 |
+### M1: Pulso Macro (Core MXN + Global) — 100 pts max
+- C1: Tipo de Cambio FIX (Banxico)
+- C2: TIIE 28 dias
+- C3: Posiciones CFTC MXN
+- C4: Reservas Internacionales
+- C5: Spread MX-US Yields
+- G1-G7: VIX, DXY, US10Y, HY Spread, Cobre, Trends, Volatilidad
 
-### Global Overlay (35 pts máx)
-| Señal | Fuente | Puntos |
-|-------|--------|--------|
-| G1: VIX | FRED | 8 |
-| G2: DXY Dollar Index | Yahoo Finance | 5 |
-| G3: US 10Y Yield | FRED | 5 |
-| G4: HY Spread Proxy | Yahoo (HYG/LQD) | 5 |
-| G5: Cobre | Yahoo Finance | 5 |
-| G6: Google Trends | Google Trends | 4 |
-| G7: Volatilidad MXN | Calculado | 3 |
+### M2: Coreografia / Ormuz — 50 pts max
+- O1: Brent Crude (termometro del conflicto)
+- O2: Gas Natural Europa TTF
+- O3: USD/CHF (refugio suizo, fuga de capital)
+- O4: SOFR (estres financiero core EEUU)
+- O5: War Risk Premium (spread Brent-WTI = Ormuz premium)
 
-## 🚦 Niveles de Alerta
+### M3: Impacto Local (Mexico/PV) — 30 pts max
+- M1: USD/MXN stress
+- M2: Precio del Maiz (crisis alimentaria)
+- M3: Fertilizantes/Urea (escasez agricola)
 
-| Score | Nivel | Acción |
+### Protocolo 0: Coherencia de Datos
+Detecta divergencias que indican manipulacion:
+- SOFR estable + CHF moviéndose = estres oculto
+- Brent en crisis + VIX tranquilo = complacencia
+- DXY subiendo + MXN estable = soporte artificial Banxico
+- Petroleo en crisis + MXN sin reaccion = impacto retrasado
+
+## Score: 0-100 (normalizado de 180 pts raw)
+| Score | Nivel | Accion |
 |-------|-------|--------|
-| 0-20 | 🟢 BAJO | Normal |
-| 21-40 | 🟡 MODERADO | Monitorear |
-| 41-60 | 🟠 ELEVADO | Reducir exposición MXN |
-| 61-80 | 🔴 ALTO | Cobertura activa |
-| 81-100 | ⚫ CRÍTICO | Modo defensivo total |
+| 0-20 | BAJO | Normal |
+| 21-40 | MODERADO | Monitorear |
+| 41-60 | ELEVADO | Reducir exposicion MXN |
+| 61-80 | ALTO | Cobertura activa |
+| 81-100 | CRITICO | Modo defensivo total |
 
-## 🛠 Stack
+## API Keys Requeridas
 
-- **Backend:** Python + FastAPI
-- **Frontend:** HTML/JS estático
-- **Deploy Frontend:** Vercel
-- **Deploy Backend:** RPi / cualquier servidor
-- **DB (opcional):** Supabase
+```env
+BANXICO_TOKEN=xxx      # banxico.org.mx/SieAPIRest
+FRED_API_KEY=xxx       # fred.stlouisfed.org
+```
 
-## 🚀 Quick Start
-
-### Frontend (Vercel)
+## Deploy
 ```bash
-# Deploy directo a Vercel
 vercel --prod
 ```
 
-### Backend (Local/RPi)
+## Cron (RPi)
 ```bash
-cd api
-pip install -r requirements.txt
-
-# Configurar variables de entorno
-export BANXICO_TOKEN="tu_token"
-export FRED_API_KEY="tu_api_key"
-
-# Ejecutar
-uvicorn main:app --host 0.0.0.0 --port 8000
+# 6:45 AM CT = 12:45 UTC
+45 12 * * * cd ~/repos/fantasma/api && python3 -c "import asyncio; from scoring import run_scoring; print(asyncio.run(run_scoring()))"
 ```
-
-## 📡 API Endpoints
-
-- `GET /` - Health check
-- `GET /score` - Score actual con todas las señales
-- `GET /signals` - Solo las señales sin scoring
-- `GET /history` - Histórico (requiere Supabase)
-
-## 🔧 Variables de Entorno
-
-```env
-# Requeridas
-BANXICO_TOKEN=xxx      # Obtener en banxico.org.mx
-FRED_API_KEY=xxx       # Obtener en fred.stlouisfed.org
-
-# Opcionales
-SUPABASE_URL=xxx
-SUPABASE_KEY=xxx
-TELEGRAM_BOT_TOKEN=xxx
-```
-
-## 📅 Scheduler
-
-El sistema está diseñado para ejecutarse diariamente a las **6:45 AM CT** (11:45 UTC), antes de la apertura del mercado mexicano.
-
-Cron job recomendado:
-```bash
-45 6 * * * cd /path/to/fantasma/api && python -c "import asyncio; from scoring import run_scoring; print(asyncio.run(run_scoring()))"
-```
-
-## 📝 Licencia
-
-MIT
 
 ---
-
-**Duendes.app** 🐝
+**Duendes.app** — El Observatorio v2

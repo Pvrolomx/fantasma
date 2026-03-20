@@ -3,327 +3,211 @@
 <head>
     <meta charset="UTF-8">
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#f59e0b">
+    <meta name="theme-color" content="#dc2626">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="FANTASMA">
+    <meta name="apple-mobile-web-app-title" content="OBSERVATORIO">
     <link rel="apple-touch-icon" href="/icon-192.png">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FANTASMA - Early Warning System</title>
+    <title>OBSERVATORIO - Panel de Control de la Realidad</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;700&display=swap');
-        
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 50%, #0a0a1a 100%);
-            min-height: 100vh;
-        }
-        
+        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 50%, #0a0a1a 100%); min-height: 100vh; }
         .mono { font-family: 'JetBrains Mono', monospace; }
-        
-        .glass {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .score-ring {
-            width: 200px;
-            height: 200px;
-            border-radius: 50%;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .score-ring::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: 50%;
-            padding: 8px;
-            background: conic-gradient(
-                var(--ring-color, #22c55e) calc(var(--score, 0) * 1%),
-                rgba(255,255,255,0.1) 0
-            );
-            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-            -webkit-mask-composite: xor;
-            mask-composite: exclude;
-        }
-        
-        .pulse {
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        
-        .signal-bar {
-            transition: width 0.5s ease-out;
-        }
+        .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        .glass-red { background: rgba(220,38,38,0.1); border: 1px solid rgba(220,38,38,0.3); }
+        .glass-amber { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); }
+        .pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+        .score-ring { width:180px; height:180px; border-radius:50%; position:relative; display:flex; align-items:center; justify-content:center; }
+        .score-ring::before { content:''; position:absolute; inset:0; border-radius:50%; padding:6px;
+            background: conic-gradient(var(--ring-color,#22c55e) calc(var(--score,0)*1%), rgba(255,255,255,0.1) 0);
+            -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #fff calc(100% - 5px));
+            mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #fff calc(100% - 5px)); }
+        .module-card { transition: all 0.3s; }
+        .module-card:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
     </style>
 </head>
-<body class="text-white p-4 md:p-8">
+<body class="text-white p-4 md:p-6">
     <div class="max-w-6xl mx-auto">
         <!-- Header -->
-        <header class="flex items-center justify-between mb-8">
+        <div class="flex items-center justify-between mb-6">
             <div>
-                <h1 class="text-3xl font-bold flex items-center gap-3">
-                    <span class="text-4xl">👻</span>
-                    FANTASMA
+                <h1 class="text-2xl md:text-3xl font-bold">
+                    <span class="text-red-500">&#x1F441;</span> OBSERVATORIO
                 </h1>
-                <p class="text-gray-400 mt-1">Sistema de Early Warning - Crisis MXN</p>
+                <p class="text-gray-400 text-sm">Panel de Control de la Realidad — Fantasma v2</p>
             </div>
             <div class="text-right">
-                <div id="timestamp" class="text-sm text-gray-400 mono"></div>
-                <button onclick="loadData()" class="mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm transition">
-                    🔄 Actualizar
-                </button>
+                <div id="timestamp" class="text-xs text-gray-500 mono"></div>
+                <button onclick="fetchScore()" class="mt-1 px-3 py-1 bg-white/10 rounded text-xs hover:bg-white/20">Actualizar</button>
             </div>
-        </header>
+        </div>
+
+        <!-- Protocolo 0 Banner -->
+        <div id="protocolo-banner" class="hidden glass-red rounded-xl p-4 mb-6">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl pulse">&#x26A0;</span>
+                <div>
+                    <div class="font-bold text-red-400">PROTOCOLO 0 ACTIVO</div>
+                    <div id="protocolo-msg" class="text-sm text-red-300"></div>
+                </div>
+            </div>
+            <div id="protocolo-alerts" class="mt-3 space-y-2"></div>
+        </div>
 
         <!-- Main Score -->
-        <div class="glass rounded-2xl p-8 mb-8">
-            <div class="flex flex-col md:flex-row items-center justify-between gap-8">
-                <!-- Score Ring -->
+        <div class="glass rounded-2xl p-6 mb-6 flex flex-col md:flex-row items-center gap-6">
+            <div class="score-ring" id="score-ring">
                 <div class="text-center">
-                    <div id="scoreRing" class="score-ring mx-auto" style="--score: 0; --ring-color: #22c55e;">
-                        <div class="text-center">
-                            <div id="scoreValue" class="text-5xl font-bold mono">--</div>
-                            <div class="text-gray-400 text-sm">/100</div>
-                        </div>
-                    </div>
-                    <div id="alertLevel" class="mt-4 text-2xl font-bold">Cargando...</div>
-                    <div id="alertAction" class="text-gray-400 mt-1">--</div>
+                    <div id="score-value" class="text-4xl font-bold mono">--</div>
+                    <div id="score-label" class="text-xs text-gray-400">SCORE</div>
                 </div>
-
-                <!-- Breakdown -->
-                <div class="flex-1 w-full md:w-auto">
-                    <h3 class="text-lg font-semibold mb-4">Desglose</h3>
-                    
-                    <!-- Core MXN -->
-                    <div class="mb-4">
-                        <div class="flex justify-between text-sm mb-1">
-                            <span>🇲🇽 Señales Core MXN</span>
-                            <span id="coreScore" class="mono">--/65</span>
-                        </div>
-                        <div class="h-3 bg-gray-700 rounded-full overflow-hidden">
-                            <div id="coreBar" class="signal-bar h-full bg-blue-500 rounded-full" style="width: 0%"></div>
-                        </div>
-                    </div>
-
-                    <!-- Global Overlay -->
-                    <div class="mb-4">
-                        <div class="flex justify-between text-sm mb-1">
-                            <span>🌍 Señales Globales</span>
-                            <span id="globalScore" class="mono">--/35</span>
-                        </div>
-                        <div class="h-3 bg-gray-700 rounded-full overflow-hidden">
-                            <div id="globalBar" class="signal-bar h-full bg-purple-500 rounded-full" style="width: 0%"></div>
-                        </div>
-                    </div>
-
-                    <!-- Active Signals -->
-                    <div class="mt-6 p-4 bg-black/30 rounded-lg">
-                        <div class="flex items-center gap-2 text-sm">
-                            <span class="text-yellow-400">⚡</span>
-                            <span>Señales activas:</span>
-                            <span id="activeCount" class="font-bold">--</span>
-                        </div>
-                    </div>
-                </div>
+            </div>
+            <div class="flex-1">
+                <div id="alert-level" class="text-2xl font-bold mb-1">Cargando...</div>
+                <div id="alert-action" class="text-gray-400 mb-3"></div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2" id="module-bars"></div>
             </div>
         </div>
 
-        <!-- Signals Grid -->
-        <div class="grid md:grid-cols-2 gap-6">
-            <!-- Core Signals -->
-            <div class="glass rounded-xl p-6">
-                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
-                    <span>🇲🇽</span> Señales Core MXN
-                </h3>
-                <div id="coreSignals" class="space-y-3">
-                    <div class="text-gray-400 text-sm">Cargando...</div>
-                </div>
+        <!-- 4 Module Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <!-- Mod 1: Macro -->
+            <div class="module-card glass rounded-xl p-4">
+                <h3 class="font-bold text-amber-400 mb-3">&#x1F310; M1: Pulso Macro</h3>
+                <div id="mod-core" class="space-y-2 text-sm"></div>
             </div>
-
-            <!-- Global Signals -->
-            <div class="glass rounded-xl p-6">
-                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
-                    <span>🌍</span> Señales Globales
-                </h3>
-                <div id="globalSignals" class="space-y-3">
-                    <div class="text-gray-400 text-sm">Cargando...</div>
-                </div>
+            <!-- Mod 2: Ormuz -->
+            <div class="module-card glass rounded-xl p-4">
+                <h3 class="font-bold text-red-400 mb-3">&#x1F6E2; M2: Coreografia (Ormuz)</h3>
+                <div id="mod-ormuz" class="space-y-2 text-sm"></div>
+            </div>
+            <!-- Mod 3: Mexico -->
+            <div class="module-card glass rounded-xl p-4">
+                <h3 class="font-bold text-green-400 mb-3">&#x1F1F2;&#x1F1FD; M3: Impacto Local</h3>
+                <div id="mod-mexico" class="space-y-2 text-sm"></div>
+            </div>
+            <!-- Mod 4: Coherencia -->
+            <div class="module-card glass rounded-xl p-4">
+                <h3 class="font-bold text-purple-400 mb-3">&#x1F50D; Protocolo 0: Coherencia</h3>
+                <div id="mod-protocolo" class="space-y-2 text-sm"></div>
             </div>
         </div>
 
-        <!-- Footer -->
-        <footer class="mt-8 text-center text-gray-500 text-sm">
-            <p>FANTASMA v1.0 • Datos actualizados cada 6:45 AM CT</p>
-            <p class="mt-1">Fuentes: Banxico, CFTC, FRED, Yahoo Finance</p>
-        </footer>
+        <!-- Active Signals -->
+        <div class="glass rounded-xl p-4">
+            <h3 class="font-bold text-gray-300 mb-3">Senales Activas</h3>
+            <div id="active-signals" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 text-sm"></div>
+        </div>
     </div>
 
     <script>
-        // API endpoint
-        const API_URL = '/api';
+    const API = window.location.origin + '/api';
+    const COLORS = { BAJO:'#22c55e', MODERADO:'#eab308', ELEVADO:'#f97316', ALTO:'#ef4444', CRITICO:'#1f2937' };
 
-        // Colores por nivel
-        const LEVEL_COLORS = {
-            'BAJO': '#22c55e',
-            'MODERADO': '#eab308',
-            'ELEVADO': '#f97316',
-            'ALTO': '#ef4444',
-            'CRÍTICO': '#1f2937'
-        };
+    function signalRow(s) {
+        if (s.error) return `<div class="flex justify-between text-gray-500"><span>${s.signal}</span><span>Error</span></div>`;
+        const pct = s.max_score ? Math.round((s.score/s.max_score)*100) : 0;
+        const color = pct > 60 ? 'text-red-400' : pct > 30 ? 'text-amber-400' : 'text-green-400';
+        const val = s.value !== undefined ? s.value : s.brent || s.spread || '—';
+        return `<div class="flex justify-between items-center">
+            <span class="text-gray-300">${s.signal}</span>
+            <div class="flex items-center gap-2">
+                <span class="mono text-gray-400">${val}</span>
+                <span class="mono font-bold ${color}">${s.score}/${s.max_score}</span>
+            </div>
+        </div>`;
+    }
 
-        // Nombres amigables de señales
-        const SIGNAL_NAMES = {
-            'C1_FIX': 'Tipo de Cambio FIX',
-            'C2_TIIE': 'TIIE 28 días',
-            'C3_CFTC': 'Posiciones CFTC',
-            'C4_RESERVAS': 'Reservas Internacionales',
-            'C5_SPREAD': 'Spread MX-US',
-            'G1_VIX': 'VIX',
-            'G2_DXY': 'Dollar Index',
-            'G3_US10Y': 'US 10Y Yield',
-            'G4_HY_SPREAD': 'HY Spread',
-            'G5_COPPER': 'Cobre',
-            'G6_GOOGLE_TRENDS': 'Google Trends',
-            'G7_VOLATILITY': 'Volatilidad MXN'
-        };
+    function renderModuleBar(name, score, max) {
+        const pct = Math.round((score/max)*100);
+        const color = pct > 60 ? 'bg-red-500' : pct > 30 ? 'bg-amber-500' : 'bg-green-500';
+        return `<div>
+            <div class="text-xs text-gray-400 mb-1">${name}</div>
+            <div class="w-full bg-white/10 rounded-full h-2">
+                <div class="${color} h-2 rounded-full" style="width:${pct}%"></div>
+            </div>
+            <div class="text-xs mono text-gray-500 mt-0.5">${score}/${max}</div>
+        </div>`;
+    }
 
-        function renderSignal(signal) {
-            const name = SIGNAL_NAMES[signal.signal] || signal.signal;
-            const score = signal.score || 0;
-            const maxScore = signal.max_score || 10;
-            const pct = (score / maxScore) * 100;
-            
-            // Determinar color basado en score
-            let barColor = 'bg-green-500';
-            if (pct > 66) barColor = 'bg-red-500';
-            else if (pct > 33) barColor = 'bg-yellow-500';
+    async function fetchScore() {
+        try {
+            const res = await fetch(API + '/score');
+            const d = await res.json();
 
-            // Valor principal a mostrar
-            let mainValue = '--';
-            if (signal.value !== undefined) mainValue = signal.value;
-            else if (signal.daily_change_pct !== undefined) mainValue = `${signal.daily_change_pct}%`;
-            else if (signal.spread_bps !== undefined) mainValue = `${signal.spread_bps} bps`;
-            else if (signal.volatility_20d_annualized !== undefined) mainValue = `${signal.volatility_20d_annualized}%`;
+            // Timestamp
+            document.getElementById('timestamp').textContent = new Date(d.timestamp).toLocaleString('es-MX');
 
-            return `
-                <div class="p-3 bg-black/20 rounded-lg">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-sm">${name}</span>
-                        <span class="mono text-sm ${score > 0 ? 'text-yellow-400' : 'text-gray-500'}">${score}/${maxScore}</span>
-                    </div>
-                    <div class="h-2 bg-gray-700 rounded-full overflow-hidden">
-                        <div class="h-full ${barColor} rounded-full transition-all" style="width: ${pct}%"></div>
-                    </div>
-                    <div class="text-xs text-gray-400 mt-1 mono">${mainValue}</div>
-                </div>
-            `;
-        }
+            // Score ring
+            const ring = document.getElementById('score-ring');
+            const color = COLORS[d.alert_level] || '#22c55e';
+            ring.style.setProperty('--score', d.total_score);
+            ring.style.setProperty('--ring-color', color);
+            document.getElementById('score-value').textContent = d.total_score;
+            document.getElementById('score-value').style.color = color;
+            document.getElementById('alert-level').textContent = `${d.alert_emoji} ${d.alert_level}`;
+            document.getElementById('alert-level').style.color = color;
+            document.getElementById('alert-action').textContent = d.recommended_action;
 
-        async function loadData() {
-            try {
-                const response = await fetch(`${API_URL}/score`);
-                const data = await response.json();
-                
-                // Update timestamp
-                document.getElementById('timestamp').textContent = 
-                    new Date(data.timestamp).toLocaleString('es-MX');
+            // Module bars
+            const mods = d.modules;
+            document.getElementById('module-bars').innerHTML = [
+                renderModuleBar('Core MXN', mods.core_mxn.score, mods.core_mxn.max),
+                renderModuleBar('Global', mods.global_overlay.score, mods.global_overlay.max),
+                renderModuleBar('Ormuz', mods.ormuz_coreografia.score, mods.ormuz_coreografia.max),
+                renderModuleBar('Mexico', mods.mexico_local.score, mods.mexico_local.max),
+            ].join('');
 
-                // Update score ring
-                const score = data.total_score;
-                const color = LEVEL_COLORS[data.alert_level] || '#22c55e';
-                const ring = document.getElementById('scoreRing');
-                ring.style.setProperty('--score', score);
-                ring.style.setProperty('--ring-color', color);
-                
-                document.getElementById('scoreValue').textContent = score;
-                document.getElementById('alertLevel').textContent = 
-                    `${data.alert_emoji} ${data.alert_level}`;
-                document.getElementById('alertLevel').style.color = color;
-                document.getElementById('alertAction').textContent = data.recommended_action;
+            // Module cards
+            document.getElementById('mod-core').innerHTML =
+                [...mods.core_mxn.signals, ...mods.global_overlay.signals].map(signalRow).join('');
+            document.getElementById('mod-ormuz').innerHTML =
+                mods.ormuz_coreografia.signals.map(signalRow).join('');
+            document.getElementById('mod-mexico').innerHTML =
+                mods.mexico_local.signals.map(signalRow).join('');
 
-                // Update breakdown
-                const coreScore = data.breakdown.core_mxn.score;
-                const globalScore = data.breakdown.global_overlay.score;
-                
-                document.getElementById('coreScore').textContent = `${coreScore}/65`;
-                document.getElementById('coreBar').style.width = `${(coreScore/65)*100}%`;
-                
-                document.getElementById('globalScore').textContent = `${globalScore}/35`;
-                document.getElementById('globalBar').style.width = `${(globalScore/35)*100}%`;
-
-                document.getElementById('activeCount').textContent = data.active_signals;
-
-                // Render signals
-                document.getElementById('coreSignals').innerHTML = 
-                    data.breakdown.core_mxn.signals.map(renderSignal).join('');
-                document.getElementById('globalSignals').innerHTML = 
-                    data.breakdown.global_overlay.signals.map(renderSignal).join('');
-
-            } catch (error) {
-                console.error('Error loading data:', error);
-                document.getElementById('alertLevel').textContent = '⚠️ Error de conexión';
-                document.getElementById('alertAction').textContent = 'Verifica la API';
+            // Protocolo 0
+            const p0 = d.protocolo_0;
+            if (p0 && p0.protocolo_0_active) {
+                document.getElementById('protocolo-banner').classList.remove('hidden');
+                document.getElementById('protocolo-msg').textContent = p0.severity;
+                document.getElementById('protocolo-alerts').innerHTML = p0.alerts.map(a =>
+                    `<div class="glass-red rounded p-2 text-xs"><strong>${a.name}</strong>: ${a.message}</div>`
+                ).join('');
+            } else {
+                document.getElementById('protocolo-banner').classList.add('hidden');
             }
+            document.getElementById('mod-protocolo').innerHTML = p0
+                ? `<div class="text-gray-400">Estado: ${p0.protocolo_0_active ? '<span class="text-red-400 font-bold">ACTIVO</span>' : '<span class="text-green-400">Normal</span>'}</div>
+                   <div class="text-gray-500 text-xs">${p0.severity}</div>
+                   <div class="text-gray-500 text-xs">Alertas: ${p0.alerts_count}</div>`
+                : '<div class="text-gray-500">Sin datos</div>';
+
+            // Active signals
+            document.getElementById('active-signals').innerHTML = d.active_details.map(s =>
+                `<div class="glass rounded p-2">${signalRow(s)}</div>`
+            ).join('') || '<div class="text-gray-500">Sin senales activas</div>';
+
+        } catch(e) {
+            console.error('Error:', e);
+            document.getElementById('alert-level').textContent = 'Error al cargar datos';
+            document.getElementById('alert-action').textContent = e.message;
         }
+    }
 
-        // Load on start
-        loadData();
-
-        // Auto-refresh every 5 minutes
-        setInterval(loadData, 5 * 60 * 1000);
+    // Auto-refresh every 5 minutes
+    fetchScore();
+    setInterval(fetchScore, 300000);
     </script>
-
-    <!-- PWA Install Button -->
-    <div id="installBanner" style="display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:linear-gradient(135deg, #f59e0b, #d97706); padding:12px 24px; border-radius:50px; box-shadow:0 4px 20px rgba(245,158,11,0.4); z-index:1000; cursor:pointer;" onclick="installPWA()">
-        <span style="color:#0a0a1a; font-weight:bold; font-size:14px;">📲 Instalar App</span>
-    </div>
 
     <script>
-        // Service Worker
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js')
-                .then(reg => console.log('SW registered'))
-                .catch(err => console.log('SW error:', err));
-        }
-
-        // PWA Install
-        let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            document.getElementById('installBanner').style.display = 'block';
-        });
-
-        function installPWA() {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then((result) => {
-                    if (result.outcome === 'accepted') {
-                        document.getElementById('installBanner').style.display = 'none';
-                    }
-                    deferredPrompt = null;
-                });
-            }
-        }
-
-        window.addEventListener('appinstalled', () => {
-            document.getElementById('installBanner').style.display = 'none';
-        });
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
     </script>
-
 </body>
 </html>
