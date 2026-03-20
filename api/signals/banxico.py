@@ -5,10 +5,11 @@ C2: TIIE 28 días (SF60648)
 C4: Reservas Internacionales (SF110168)
 """
 import httpx
+import os
 from datetime import datetime, timedelta
 from typing import Dict, Tuple
 
-BANXICO_TOKEN = "your_banxico_token"  # Se configura en env
+BANXICO_TOKEN = os.getenv("BANXICO_TOKEN", "40418d20484c683fc7d603806b8bed5433e43ddba807b451b83cb2c09776c650")  # Se configura en env
 BASE_URL = "https://www.banxico.org.mx/SieAPIRest/service/v1/series"
 
 async def fetch_series(series_id: str, days: int = 30) -> list:

@@ -5,10 +5,11 @@ G1: VIX
 G3: US 10Y Yield
 """
 import httpx
+import os
 from datetime import datetime, timedelta
 from typing import Dict, Tuple
 
-FRED_API_KEY = "your_fred_api_key"  # Gratis en fred.stlouisfed.org
+FRED_API_KEY = os.getenv("FRED_API_KEY", "PENDING")  # Gratis en fred.stlouisfed.org
 BASE_URL = "https://api.stlouisfed.org/fred/series/observations"
 
 async def fetch_fred_series(series_id: str, days: int = 30) -> list:
