@@ -97,6 +97,23 @@
             </div>
         </div>
 
+        
+        <!-- History Chart -->
+        <div class="glass rounded-xl p-4 mb-6">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="font-bold text-gray-300">Evolucion Diaria</h3>
+                <select id="history-days" onchange="fetchHistory()" class="bg-white/10 text-white text-xs rounded px-2 py-1 border border-white/20">
+                    <option value="7">7 dias</option>
+                    <option value="14">14 dias</option>
+                    <option value="30" selected>30 dias</option>
+                    <option value="90">90 dias</option>
+                </select>
+            </div>
+            <div id="history-summary" class="text-sm mb-3"></div>
+            <canvas id="historyChart" height="200"></canvas>
+            <div id="history-table" class="mt-4 text-xs"></div>
+        </div>
+
         <!-- Active Signals -->
         <div class="glass rounded-xl p-4">
             <h3 class="font-bold text-gray-300 mb-3">Senales Activas</h3>
@@ -242,6 +259,80 @@
     </script>
 
     <script>
+
+    let historyChart = null;
+
+    async function fetchHistory() {
+        const days = document.getElementById('history-days').value;
+        try {
+            const res = await fetch(API + '/history?days=' + days);
+            const d = await res.json();
+
+            // Summary
+            const sum = d.summary || {};
+            let sumHtml = '';
+            if (sum.change !== undefined && sum.change !== 0) {
+                const arrow = sum.direction === 'up' ? '&#x2B06;' : '&#x2B07;';
+                const color = sum.direction === 'up' ? 'text-red-400' : 'text-green-400';
+                sumHtml = '<span class="' + color + '">' + arrow + ' ' + (sum.change > 0 ? '+' : '') + sum.change + ' pts vs ayer</span>';
+            } else if (sum.change === 0 && sum.today) {
+                sumHtml = '<span class="text-gray-400">Sin cambio vs ayer</span>';
+            }
+            document.getElementById('history-summary').innerHTML = sumHtml;
+
+            // Chart
+            const hist = d.history || [];
+            if (hist.length === 0) {
+                document.getElementById('history-table').innerHTML = '<span class="text-gray-500">Sin datos historicos aun. Se acumulan dia a dia.</span>';
+                return;
+            }
+
+            const labels = hist.map(h => h.date.slice(5));
+            const scores = hist.map(h => h.total_score);
+            const ormuz = hist.map(h => (h.modules || {}).ormuz_coreografia || 0);
+            const mexico = hist.map(h => (h.modules || {}).mexico_local || 0);
+
+            if (historyChart) historyChart.destroy();
+            const ctx = document.getElementById('historyChart').getContext('2d');
+            historyChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        { label: 'Score Total', data: scores, borderColor: '#eab308', backgroundColor: 'rgba(234,179,8,0.1)', fill: true, tension: 0.3 },
+                        { label: 'Ormuz', data: ormuz, borderColor: '#ef4444', borderDash: [5,3], tension: 0.3 },
+                        { label: 'Mexico', data: mexico, borderColor: '#22c55e', borderDash: [5,3], tension: 0.3 },
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { labels: { color: '#9ca3af', font: { size: 11 } } } },
+                    scales: {
+                        x: { ticks: { color: '#6b7280', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                        y: { ticks: { color: '#6b7280' }, grid: { color: 'rgba(255,255,255,0.05)' },
+                             suggestedMin: 0 }
+                    }
+                }
+            });
+
+            // Mini table
+            const last5 = hist.slice(-5).reverse();
+            let tbl = '<table class="w-full"><tr class="text-gray-500"><td>Fecha</td><td>Score</td><td>Nivel</td><td>Senales</td></tr>';
+            last5.forEach(h => {
+                const sc = h.total_score > 100 ? '<span class="text-red-500 font-bold">' + h.total_score + '</span>' : h.total_score;
+                tbl += '<tr class="text-gray-400 border-t border-white/5"><td>' + h.date.slice(5) + '</td><td class="mono">' + sc + '</td><td>' + (h.alert_emoji||'') + ' ' + (h.alert_level||'') + '</td><td>' + (h.active_signals||0) + '</td></tr>';
+            });
+            tbl += '</table>';
+            document.getElementById('history-table').innerHTML = tbl;
+
+        } catch(e) {
+            document.getElementById('history-table').innerHTML = '<span class="text-gray-500">Error cargando historial</span>';
+        }
+    }
+
+    // Load history after score
+    setTimeout(fetchHistory, 2000);
+
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js').catch(() => {});
     }

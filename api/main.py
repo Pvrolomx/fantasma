@@ -17,6 +17,7 @@ import os
 
 from scoring import run_scoring, collect_all_signals, get_alert_level
 from protocolo_cero import check_protocolo_cero
+from history import save_snapshot, load_history, get_daily_summary
 
 app = FastAPI(
     title="FANTASMA / OBSERVATORIO API",
@@ -46,6 +47,10 @@ async def root():
 async def get_score():
     try:
         report = await run_scoring()
+        try:
+            save_snapshot(report)
+        except Exception:
+            pass  # Don't fail score if history save fails
         return JSONResponse(content=report)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -75,14 +80,16 @@ async def check_alert(score: int):
     alert = get_alert_level(score)
     return {"score": score, "level": alert["level"], "emoji": alert["emoji"], "action": alert["action"]}
 
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 @app.get("/history")
 async def get_history(days: int = 30):
-    if not SUPABASE_URL or not SUPABASE_KEY:
-        return {"error": "Supabase not configured", "note": "Set SUPABASE_URL and SUPABASE_KEY"}
-    return {"message": "History endpoint - requires Supabase setup", "days_requested": days}
+    """Historico de scores - ultimos N dias."""
+    try:
+        data = load_history(days=days)
+        summary = get_daily_summary()
+        return {"days_requested": days, "data_points": len(data), "history": data, "summary": summary}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn
