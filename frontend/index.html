@@ -108,6 +108,40 @@
     const API = window.location.origin + '/api';
     const COLORS = { BAJO:'#22c55e', MODERADO:'#eab308', ELEVADO:'#f97316', ALTO:'#ef4444', CRITICO:'#1f2937' };
 
+
+    const TIPS = {
+        'C1_FIX': 'Tipo de cambio FIX de Banxico. Si sube >1.5% en un dia, hay presion sobre el peso.',
+        'C2_TIIE': 'Tasa interbancaria a 28 dias. El costo del dinero en Mexico. Spread alto vs Fed = riesgo pais.',
+        'C3_CFTC': 'Posiciones especulativas en el peso (futuros Chicago). Si los gringos apuestan contra el peso, mal signal.',
+        'C4_RESERVAS': 'Reservas internacionales de Banxico. Si caen rapido, Banxico esta quemando balas para sostener el peso.',
+        'C5_SPREAD': 'Diferencia entre lo que pagan bonos MX vs US. Mas amplio = Mexico tiene que pagar mas para atraer inversion.',
+        'G1_VIX': 'Indice del miedo de Wall Street. >25 nervioso, >35 panico. Mide la volatilidad esperada del S&P 500.',
+        'G2_DXY': 'Indice del dolar vs canasta de monedas. Si sube, el dolar se fortalece y las monedas emergentes sufren.',
+        'G3_US10Y': 'Rendimiento del bono del Tesoro US a 10 anos. Sube = dinero sale de mercados emergentes hacia EEUU.',
+        'G4_HY_SPREAD': 'Spread entre bonos basura y grado de inversion. Se amplia = el credito se encarece, estres corporativo.',
+        'G5_COPPER': 'Precio del cobre. Proxy de la salud de China y la economia fisica global. Cae = desaceleracion.',
+        'G6_GOOGLE_TRENDS': 'Busquedas de "crisis Mexico", "comprar dolares", etc. Mide el panico del mexicano promedio.',
+        'G7_VOLATILITY': 'Volatilidad historica del peso (20 dias). Alta = mercado inestable, movimientos bruscos.',
+        'O1_BRENT': 'Petroleo Brent. Termometro directo de Ormuz. Pre-guerra $65, ahora >$100. Cada dolar sube tu gasolina.',
+        'O2_GAS_EU': 'Gas natural europeo (TTF). Qatar exporta via Ormuz. Si sube, Europa entra en crisis energetica.',
+        'O3_USDCHF': 'Dolar vs Franco suizo. Si el CHF sube, el dinero real huye a Suiza. Refugio de ultima instancia.',
+        'O4_SOFR': 'Tasa overnight de EEUU. Si sube de golpe, hay estres en la fontaneria financiera del sistema.',
+        'O5_WAR_RISK': 'Spread Brent-WTI. Normal $2-4. Si pasa de $8, hay un "impuesto Ormuz" en cada barril del Golfo.',
+        'M1_USDMXN': 'Tu tipo de cambio. Arriba de $20 es tu alarma. Cada peso que sube encarece todo lo importado.',
+        'M2_CORN': 'Precio internacional del maiz. Mexico importa mucho. Si sube >10% mensual, la tortilla va a subir.',
+        'M3_UREA': 'Fertilizantes (proxy: gas natural). Ormuz bloquea fertilizantes del Golfo. Sin fertilizante no hay cosecha.',
+    };
+
+
+    function showTip(signal) {
+        const tip = TIPS[signal] || 'Sin descripcion disponible';
+        document.getElementById('tip-title').textContent = signal;
+        document.getElementById('tip-body').textContent = tip;
+        const m = document.getElementById('tip-modal');
+        m.classList.remove('hidden');
+        m.classList.add('flex');
+    }
+
     function signalRow(s) {
         if (s.error) return `<div class="flex justify-between text-gray-500"><span>${s.signal}</span><span>Error</span></div>`;
         const pct = s.max_score ? Math.round((s.score/s.max_score)*100) : 0;
@@ -115,7 +149,7 @@
         const color = overflow ? 'text-red-500 font-black' : pct > 60 ? 'text-red-400' : pct > 30 ? 'text-amber-400' : 'text-green-400';
         const val = s.value !== undefined ? s.value : s.brent || s.spread || '—';
         return `<div class="flex justify-between items-center">
-            <span class="text-gray-300">${s.signal}</span>
+            <span class="text-gray-300 cursor-help border-b border-dotted border-gray-600" title="${TIPS[s.signal] || s.signal}" onclick="showTip('${s.signal}')">${s.signal}</span>
             <div class="flex items-center gap-2">
                 <span class="mono text-gray-400">${val}</span>
                 <span class="mono font-bold ${color}">${s.score}/${s.max_score}</span>
@@ -212,5 +246,15 @@
         navigator.serviceWorker.register('/sw.js').catch(() => {});
     }
     </script>
+
+    <!-- Tooltip Modal for mobile -->
+    <div id="tip-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.7)" onclick="this.classList.add('hidden');this.classList.remove('flex')">
+        <div class="glass rounded-xl p-5 max-w-sm w-full" onclick="event.stopPropagation()">
+            <div id="tip-title" class="font-bold text-amber-400 mono mb-2"></div>
+            <div id="tip-body" class="text-gray-300 text-sm leading-relaxed"></div>
+            <button onclick="document.getElementById('tip-modal').classList.add('hidden');document.getElementById('tip-modal').classList.remove('flex')" class="mt-3 text-xs text-gray-500 hover:text-white">Cerrar</button>
+        </div>
+    </div>
+
 </body>
 </html>
