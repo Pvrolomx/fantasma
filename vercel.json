@@ -22,12 +22,20 @@
     {
       "src": "api/history_handler.py",
       "use": "@vercel/python"
+    },
+    {
+      "src": "api/dias_rojo_handler.py",
+      "use": "@vercel/python"
     }
   ],
   "routes": [
     {
       "src": "/api/alert",
       "dest": "/api/alert.py"
+    },
+    {
+      "src": "/api/dias-rojo",
+      "dest": "/api/dias_rojo_handler.py"
     },
     {
       "src": "/api/score",

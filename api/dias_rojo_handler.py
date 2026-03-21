@@ -1,6 +1,7 @@
 """
-FANTASMA / OBSERVATORIO - Vercel Serverless Entry Point
-Includes dias_rojo data in score response.
+FANTASMA / OBSERVATORIO - Dias en Rojo Vercel Endpoint
+Serves /api/dias-rojo
+Returns consecutive days each signal has been above its absolute threshold.
 """
 from http.server import BaseHTTPRequestHandler
 import json
@@ -10,7 +11,6 @@ import os
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from scoring import run_scoring
 from dias_rojo import calculate_dias_rojo
 
 
@@ -22,11 +22,8 @@ class handler(BaseHTTPRequestHandler):
         self.end_headers()
 
         try:
-            report = asyncio.run(run_scoring())
-            # Calculate dias en rojo using current report
-            dias = asyncio.run(calculate_dias_rojo(report))
-            report["dias_rojo"] = dias
-            self.wfile.write(json.dumps(report, ensure_ascii=False).encode())
+            result = asyncio.run(calculate_dias_rojo())
+            self.wfile.write(json.dumps(result, ensure_ascii=False).encode())
         except Exception as e:
-            error = {"error": str(e), "service": "OBSERVATORIO v2"}
+            error = {"error": str(e)}
             self.wfile.write(json.dumps(error).encode())

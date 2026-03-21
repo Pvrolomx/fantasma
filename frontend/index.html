@@ -76,29 +76,35 @@
 
         <!-- 4 Module Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <!-- Mod 1: Macro -->
             <div class="module-card glass rounded-xl p-4">
                 <h3 class="font-bold text-amber-400 mb-3">&#x1F310; M1: Pulso Macro</h3>
                 <div id="mod-core" class="space-y-2 text-sm"></div>
             </div>
-            <!-- Mod 2: Ormuz -->
             <div class="module-card glass rounded-xl p-4">
                 <h3 class="font-bold text-red-400 mb-3">&#x1F6E2; M2: Coreografia (Ormuz)</h3>
                 <div id="mod-ormuz" class="space-y-2 text-sm"></div>
             </div>
-            <!-- Mod 3: Mexico -->
             <div class="module-card glass rounded-xl p-4">
                 <h3 class="font-bold text-green-400 mb-3">&#x1F1F2;&#x1F1FD; M3: Impacto Local</h3>
                 <div id="mod-mexico" class="space-y-2 text-sm"></div>
             </div>
-            <!-- Mod 4: Coherencia -->
             <div class="module-card glass rounded-xl p-4">
                 <h3 class="font-bold text-purple-400 mb-3">&#x1F50D; Protocolo 0: Coherencia</h3>
                 <div id="mod-protocolo" class="space-y-2 text-sm"></div>
             </div>
         </div>
 
-        
+        <!-- Dias en Rojo -->
+        <div class="glass rounded-xl p-4 mb-6" id="dias-rojo-section">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="font-bold text-red-300">&#x1F525; Dias en Rojo</h3>
+                <span class="text-xs text-gray-500" id="dias-rojo-summary"></span>
+            </div>
+            <div id="dias-rojo-table" class="text-sm">
+                <span class="text-gray-500">Cargando...</span>
+            </div>
+        </div>
+
         <!-- History Chart -->
         <div class="glass rounded-xl p-4 mb-6">
             <div class="flex items-center justify-between mb-3">
@@ -123,7 +129,6 @@
     </div>
 
     <script>
-
     // PWA Install prompt
     let deferredPrompt;
     window.addEventListener('beforeinstallprompt', (e) => {
@@ -145,7 +150,6 @@
 
     const API = window.location.origin + '/api';
     const COLORS = { BAJO:'#22c55e', MODERADO:'#eab308', ELEVADO:'#f97316', ALTO:'#ef4444', CRITICO:'#1f2937' };
-
 
     const TIPS = {
         'C1_FIX': 'Tipo de cambio FIX de Banxico. Si sube >1.5% en un dia, hay presion sobre el peso.',
@@ -170,7 +174,6 @@
         'M3_UREA': 'Fertilizantes (proxy: gas natural). Ormuz bloquea fertilizantes del Golfo. Sin fertilizante no hay cosecha.',
     };
 
-
     function showTip(signal) {
         const tip = TIPS[signal] || 'Sin descripcion disponible';
         document.getElementById('tip-title').textContent = signal;
@@ -181,55 +184,81 @@
     }
 
     function signalRow(s) {
-        if (s.error) return `<div class="flex justify-between text-gray-500"><span>${s.signal}</span><span>Error</span></div>`;
-        const pct = s.max_score ? Math.round((s.score/s.max_score)*100) : 0;
-        const overflow = s.score > s.max_score;
-        const color = overflow ? 'text-red-500 font-black' : pct > 60 ? 'text-red-400' : pct > 30 ? 'text-amber-400' : 'text-green-400';
-        const val = s.value !== undefined ? s.value : s.brent || s.spread || '—';
-        return `<div class="flex justify-between items-center">
-            <span class="text-gray-300 cursor-help border-b border-dotted border-gray-600" title="${TIPS[s.signal] || s.signal}" onclick="showTip('${s.signal}')">${s.signal}</span>
-            <div class="flex items-center gap-2">
-                <span class="mono text-gray-400">${val}</span>
-                <span class="mono font-bold ${color}">${s.score}/${s.max_score}</span>
-            </div>
-        </div>`;
+        if (s.error) return '<div class="flex justify-between text-gray-500"><span>' + s.signal + '</span><span>Error</span></div>';
+        var pct = s.max_score ? Math.round((s.score/s.max_score)*100) : 0;
+        var overflow = s.score > s.max_score;
+        var color = overflow ? 'text-red-500 font-black' : pct > 60 ? 'text-red-400' : pct > 30 ? 'text-amber-400' : 'text-green-400';
+        var val = s.value !== undefined ? s.value : s.brent || s.spread || '—';
+        return '<div class="flex justify-between items-center">' +
+            '<span class="text-gray-300 cursor-help border-b border-dotted border-gray-600" title="' + (TIPS[s.signal] || s.signal) + '" onclick="showTip(\'' + s.signal + '\')">' + s.signal + '</span>' +
+            '<div class="flex items-center gap-2">' +
+                '<span class="mono text-gray-400">' + val + '</span>' +
+                '<span class="mono font-bold ' + color + '">' + s.score + '/' + s.max_score + '</span>' +
+            '</div></div>';
     }
 
     function renderModuleBar(name, score, max) {
-        const pct = Math.round((score/max)*100);
-        const ovf = pct > 100;
-        const color = ovf ? 'bg-red-600' : pct > 60 ? 'bg-red-500' : pct > 30 ? 'bg-amber-500' : 'bg-green-500';
-        return `<div>
-            <div class="text-xs text-gray-400 mb-1">${name}</div>
-            <div class="w-full bg-white/10 rounded-full h-2">
-                <div class="${color} h-2 rounded-full" style="width:${Math.min(pct,100)}%"></div>
-            </div>
-            <div class="text-xs mono text-gray-500 mt-0.5">${score}/${max}</div>
-        </div>`;
+        var pct = Math.round((score/max)*100);
+        var ovf = pct > 100;
+        var color = ovf ? 'bg-red-600' : pct > 60 ? 'bg-red-500' : pct > 30 ? 'bg-amber-500' : 'bg-green-500';
+        return '<div><div class="text-xs text-gray-400 mb-1">' + name + '</div>' +
+            '<div class="w-full bg-white/10 rounded-full h-2"><div class="' + color + ' h-2 rounded-full" style="width:' + Math.min(pct,100) + '%"></div></div>' +
+            '<div class="text-xs mono text-gray-500 mt-0.5">' + score + '/' + max + '</div></div>';
+    }
+
+    function renderDiasRojo(diasData) {
+        if (!diasData || !diasData.signals) {
+            document.getElementById('dias-rojo-table').innerHTML = '<span class="text-gray-500">Sin datos</span>';
+            return;
+        }
+        var sum = diasData.summary || {};
+        document.getElementById('dias-rojo-summary').textContent =
+            sum.currently_red + '/' + sum.total_monitored + ' en rojo' +
+            (sum.chronic_30d > 0 ? ' | ' + sum.chronic_30d + ' cronicas (>30d)' : '');
+        var entries = Object.entries(diasData.signals).sort(function(a,b) { return b[1].consecutive_days - a[1].consecutive_days; });
+        var rows = '';
+        for (var i = 0; i < entries.length; i++) {
+            var key = entries[i][0];
+            var s = entries[i][1];
+            var days = s.consecutive_days;
+            var chronic = days >= 30;
+            var isRed = s.is_red;
+            var dotColor = isRed ? (chronic ? 'bg-red-600 pulse' : 'bg-red-500') : 'bg-gray-600';
+            var textColor = isRed ? (chronic ? 'text-red-400 font-bold' : 'text-red-300') : 'text-gray-500';
+            var daysText = days > 0 ? days + 'd' : '-';
+            var val = (s.current_value !== null && s.current_value !== undefined) ? s.current_value : '-';
+            var op = s.op === '>' ? '>' : '<';
+            rows += '<div class="flex items-center justify-between py-1.5 border-b border-white/5">' +
+                '<div class="flex items-center gap-2">' +
+                '<div class="w-2 h-2 rounded-full ' + dotColor + '"></div>' +
+                '<span class="text-gray-300 cursor-help" onclick="showTip(\'' + key + '\')">' + s.label + '</span></div>' +
+                '<div class="flex items-center gap-4">' +
+                '<span class="mono text-xs text-gray-400">' + val + ' <span class="text-gray-600">(' + op + s.threshold + ')</span></span>' +
+                '<span class="mono font-bold ' + textColor + ' w-12 text-right">' + daysText + '</span>' +
+                '</div></div>';
+        }
+        document.getElementById('dias-rojo-table').innerHTML = rows || '<span class="text-gray-500">Sin datos</span>';
     }
 
     async function fetchScore() {
         try {
-            const res = await fetch(API + '/score');
-            const d = await res.json();
+            var res = await fetch(API + '/score');
+            var d = await res.json();
 
-            // Timestamp
             document.getElementById('timestamp').textContent = new Date(d.timestamp).toLocaleString('es-MX');
 
-            // Score ring
-            const ring = document.getElementById('score-ring');
-            const isOver100 = d.total_score > 100;
-            const color = isOver100 ? '#7f1d1d' : (COLORS[d.alert_level] || '#22c55e');
+            var ring = document.getElementById('score-ring');
+            var isOver100 = d.total_score > 100;
+            var color = isOver100 ? '#7f1d1d' : (COLORS[d.alert_level] || '#22c55e');
             ring.style.setProperty('--score', d.total_score);
             ring.style.setProperty('--ring-color', color);
             document.getElementById('score-value').textContent = d.total_score;
             document.getElementById('score-value').style.color = color;
-            document.getElementById('alert-level').textContent = `${d.alert_emoji} ${d.alert_level}`;
+            document.getElementById('alert-level').textContent = d.alert_emoji + ' ' + d.alert_level;
             document.getElementById('alert-level').style.color = color;
             document.getElementById('alert-action').textContent = d.recommended_action;
 
-            // Module bars
-            const mods = d.modules;
+            var mods = d.modules;
             document.getElementById('module-bars').innerHTML = [
                 renderModuleBar('Core MXN', mods.core_mxn.score, mods.core_mxn.max),
                 renderModuleBar('Global', mods.global_overlay.score, mods.global_overlay.max),
@@ -237,35 +266,37 @@
                 renderModuleBar('Mexico', mods.mexico_local.score, mods.mexico_local.max),
             ].join('');
 
-            // Module cards
             document.getElementById('mod-core').innerHTML =
-                [...mods.core_mxn.signals, ...mods.global_overlay.signals].map(signalRow).join('');
+                [].concat(mods.core_mxn.signals, mods.global_overlay.signals).map(signalRow).join('');
             document.getElementById('mod-ormuz').innerHTML =
                 mods.ormuz_coreografia.signals.map(signalRow).join('');
             document.getElementById('mod-mexico').innerHTML =
                 mods.mexico_local.signals.map(signalRow).join('');
 
             // Protocolo 0
-            const p0 = d.protocolo_0;
+            var p0 = d.protocolo_0;
             if (p0 && p0.protocolo_0_active) {
                 document.getElementById('protocolo-banner').classList.remove('hidden');
                 document.getElementById('protocolo-msg').textContent = p0.severity;
-                document.getElementById('protocolo-alerts').innerHTML = p0.alerts.map(a =>
-                    `<div class="glass-red rounded p-2 text-xs"><strong>${a.name}</strong>: ${a.message}</div>`
-                ).join('');
+                document.getElementById('protocolo-alerts').innerHTML = p0.alerts.map(function(a) {
+                    return '<div class="glass-red rounded p-2 text-xs"><strong>' + a.name + '</strong>: ' + a.message + '</div>';
+                }).join('');
             } else {
                 document.getElementById('protocolo-banner').classList.add('hidden');
             }
             document.getElementById('mod-protocolo').innerHTML = p0
-                ? `<div class="text-gray-400">Estado: ${p0.protocolo_0_active ? '<span class="text-red-400 font-bold">ACTIVO</span>' : '<span class="text-green-400">Normal</span>'}</div>
-                   <div class="text-gray-500 text-xs">${p0.severity}</div>
-                   <div class="text-gray-500 text-xs">Alertas: ${p0.alerts_count}</div>`
+                ? '<div class="text-gray-400">Estado: ' + (p0.protocolo_0_active ? '<span class="text-red-400 font-bold">ACTIVO</span>' : '<span class="text-green-400">Normal</span>') + '</div>' +
+                  '<div class="text-gray-500 text-xs">' + p0.severity + '</div>' +
+                  '<div class="text-gray-500 text-xs">Alertas: ' + p0.alerts_count + '</div>'
                 : '<div class="text-gray-500">Sin datos</div>';
 
             // Active signals
-            document.getElementById('active-signals').innerHTML = d.active_details.map(s =>
-                `<div class="glass rounded p-2">${signalRow(s)}</div>`
-            ).join('') || '<div class="text-gray-500">Sin senales activas</div>';
+            document.getElementById('active-signals').innerHTML = d.active_details.map(function(s) {
+                return '<div class="glass rounded p-2">' + signalRow(s) + '</div>';
+            }).join('') || '<div class="text-gray-500">Sin senales activas</div>';
+
+            // Dias en Rojo
+            if (d.dias_rojo) renderDiasRojo(d.dias_rojo);
 
         } catch(e) {
             console.error('Error:', e);
@@ -274,51 +305,47 @@
         }
     }
 
-    // Auto-refresh every 5 minutes
     fetchScore();
     setInterval(fetchScore, 300000);
     </script>
 
     <script>
-
-    let historyChart = null;
+    var historyChart = null;
 
     async function fetchHistory() {
-        const days = document.getElementById('history-days').value;
+        var days = document.getElementById('history-days').value;
         try {
-            const res = await fetch(API + '/history?days=' + days);
-            const d = await res.json();
+            var res = await fetch(API + '/history?days=' + days);
+            var d = await res.json();
 
-            // Summary
-            const sum = d.summary || {};
-            let sumHtml = '';
+            var sum = d.summary || {};
+            var sumHtml = '';
             if (sum.change !== undefined && sum.change !== 0) {
-                const arrow = sum.direction === 'up' ? '&#x2B06;' : '&#x2B07;';
-                const color = sum.direction === 'up' ? 'text-red-400' : 'text-green-400';
+                var arrow = sum.direction === 'up' ? '&#x2B06;' : '&#x2B07;';
+                var color = sum.direction === 'up' ? 'text-red-400' : 'text-green-400';
                 sumHtml = '<span class="' + color + '">' + arrow + ' ' + (sum.change > 0 ? '+' : '') + sum.change + ' pts vs ayer</span>';
             } else if (sum.change === 0 && sum.today) {
                 sumHtml = '<span class="text-gray-400">Sin cambio vs ayer</span>';
             }
             document.getElementById('history-summary').innerHTML = sumHtml;
 
-            // Chart
-            const hist = d.history || [];
+            var hist = d.history || [];
             if (hist.length === 0) {
                 document.getElementById('history-table').innerHTML = '<span class="text-gray-500">Sin datos historicos aun. Se acumulan dia a dia.</span>';
                 return;
             }
 
-            const labels = hist.map(h => h.date.slice(5));
-            const scores = hist.map(h => h.total_score);
-            const ormuz = hist.map(h => (h.modules || {}).ormuz_coreografia || 0);
-            const mexico = hist.map(h => (h.modules || {}).mexico_local || 0);
+            var labels = hist.map(function(h) { return h.date.slice(5); });
+            var scores = hist.map(function(h) { return h.total_score; });
+            var ormuz = hist.map(function(h) { return (h.modules || {}).ormuz_coreografia || 0; });
+            var mexico = hist.map(function(h) { return (h.modules || {}).mexico_local || 0; });
 
             if (historyChart) historyChart.destroy();
-            const ctx = document.getElementById('historyChart').getContext('2d');
+            var ctx = document.getElementById('historyChart').getContext('2d');
             historyChart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels,
+                    labels: labels,
                     datasets: [
                         { label: 'Score Total', data: scores, borderColor: '#eab308', backgroundColor: 'rgba(234,179,8,0.1)', fill: true, tension: 0.3 },
                         { label: 'Ormuz', data: ormuz, borderColor: '#ef4444', borderDash: [5,3], tension: 0.3 },
@@ -330,17 +357,15 @@
                     plugins: { legend: { labels: { color: '#9ca3af', font: { size: 11 } } } },
                     scales: {
                         x: { ticks: { color: '#6b7280', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
-                        y: { ticks: { color: '#6b7280' }, grid: { color: 'rgba(255,255,255,0.05)' },
-                             suggestedMin: 0 }
+                        y: { ticks: { color: '#6b7280' }, grid: { color: 'rgba(255,255,255,0.05)' }, suggestedMin: 0 }
                     }
                 }
             });
 
-            // Mini table
-            const last5 = hist.slice(-5).reverse();
-            let tbl = '<table class="w-full"><tr class="text-gray-500"><td>Fecha</td><td>Score</td><td>Nivel</td><td>Senales</td></tr>';
-            last5.forEach(h => {
-                const sc = h.total_score > 100 ? '<span class="text-red-500 font-bold">' + h.total_score + '</span>' : h.total_score;
+            var last5 = hist.slice(-5).reverse();
+            var tbl = '<table class="w-full"><tr class="text-gray-500"><td>Fecha</td><td>Score</td><td>Nivel</td><td>Senales</td></tr>';
+            last5.forEach(function(h) {
+                var sc = h.total_score > 100 ? '<span class="text-red-500 font-bold">' + h.total_score + '</span>' : h.total_score;
                 tbl += '<tr class="text-gray-400 border-t border-white/5"><td>' + h.date.slice(5) + '</td><td class="mono">' + sc + '</td><td>' + (h.alert_emoji||'') + ' ' + (h.alert_level||'') + '</td><td>' + (h.active_signals||0) + '</td></tr>';
             });
             tbl += '</table>';
@@ -351,15 +376,14 @@
         }
     }
 
-    // Load history after score
     setTimeout(fetchHistory, 2000);
 
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js').catch(() => {});
+        navigator.serviceWorker.register('/sw.js').catch(function(){});
     }
     </script>
 
-    <!-- Tooltip Modal for mobile -->
+    <!-- Tooltip Modal -->
     <div id="tip-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.7)" onclick="this.classList.add('hidden');this.classList.remove('flex')">
         <div class="glass rounded-xl p-5 max-w-sm w-full" onclick="event.stopPropagation()">
             <div id="tip-title" class="font-bold text-amber-400 mono mb-2"></div>
