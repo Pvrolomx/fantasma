@@ -8,6 +8,7 @@ from .volatility import get_g7_volatility
 from .ormuz import get_o1_brent, get_o2_gas_europe, get_o3_usdchf, get_o4_sofr, get_o5_war_risk
 from .mexico import get_m1_usdmxn, get_m2_corn, get_m3_urea
 from .carry_trade import get_g8_carry_trade
+from .fantasma_extra import get_g9_swap_lines, get_g10_interbank, get_g11_dragon, get_c6_contrarian
 
 __all__ = [
     'get_c1_fix', 'get_c2_tiie', 'get_c3_cftc', 'get_c4_reservas', 'get_c5_spread',
@@ -16,4 +17,5 @@ __all__ = [
     'get_o1_brent', 'get_o2_gas_europe', 'get_o3_usdchf', 'get_o4_sofr', 'get_o5_war_risk',
     'get_m1_usdmxn', 'get_m2_corn', 'get_m3_urea',
     'get_g8_carry_trade',
+    'get_g9_swap_lines', 'get_g10_interbank', 'get_g11_dragon', 'get_c6_contrarian',
 ]
