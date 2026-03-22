@@ -1,6 +1,6 @@
 """
 FANTASMA / OBSERVATORIO - Motor de Scoring v2
-4 Modulos: Core MXN (70) + Global (35) + Ormuz (50) + Mexico (30) = 185 pts
+4 Modulos: Core MXN (70) + Global (43) + Ormuz (50) + Mexico (30) = 193 pts
 Score normalizado a 0-100.
 """
 import asyncio
@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import Dict, List, Tuple
 
 from signals import (
+    get_g8_carry_trade,
     get_c1_fix, get_c2_tiie, get_c3_cftc, get_c4_reservas, get_c5_spread,
     get_g1_vix, get_g2_dxy, get_g3_us10y, get_g4_hy_spread, get_g5_copper,
     get_g6_google_trends, get_g7_volatility, get_fed_funds_rate,
@@ -24,7 +25,7 @@ ALERT_LEVELS = {
     (81, 100): {"level": "CRITICO", "emoji": "⚫", "action": "Modo defensivo total"},
 }
 
-MAX_RAW_SCORE = 185  # 70 + 35 + 50 + 30
+MAX_RAW_SCORE = 193  # 70 + 43 + 50 + 30
 
 
 def get_alert_level(score: int) -> Dict:
@@ -54,6 +55,7 @@ async def collect_all_signals() -> Tuple[int, List[Dict]]:
         ("G5_COPPER", get_g5_copper()),
         ("G6_TRENDS", get_g6_google_trends()),
         ("G7_VOL", get_g7_volatility()),
+        ("G8_CARRY", get_g8_carry_trade()),
         # Module 2: Ormuz / Coreografia (50 pts max)
         ("O1_BRENT", get_o1_brent()),
         ("O2_GAS_EU", get_o2_gas_europe()),
@@ -101,7 +103,7 @@ def generate_report(score_raw: int, signals: list, protocolo: dict) -> dict:
         "protocolo_0": protocolo,
         "modules": {
             "core_mxn": {"score": sum(s.get("score", 0) for s in core), "max": 70, "signals": core},
-            "global_overlay": {"score": sum(s.get("score", 0) for s in glob), "max": 35, "signals": glob},
+            "global_overlay": {"score": sum(s.get("score", 0) for s in glob), "max": 43, "signals": glob},
             "ormuz_coreografia": {"score": sum(s.get("score", 0) for s in ormuz), "max": 50, "signals": ormuz},
             "mexico_local": {"score": sum(s.get("score", 0) for s in mexico), "max": 30, "signals": mexico},
         },
