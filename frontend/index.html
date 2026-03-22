@@ -57,6 +57,7 @@
                 </div>
             </div>
             <div id="protocolo-alerts" class="mt-3 space-y-2"></div>
+            <div id="manipulation-index" class="mt-3"></div>
         </div>
 
         <!-- Main Score -->
@@ -206,6 +207,35 @@
             '<div class="text-xs mono text-gray-500 mt-0.5">' + score + '/' + max + '</div></div>';
     }
 
+
+    function renderManipulationIndex(p0) {
+        var mi = p0.manipulation_index;
+        if (!mi) return;
+        var val = mi.value;
+        var color = val > 25 ? '#ef4444' : val > 15 ? '#f97316' : val > 8 ? '#eab308' : '#22c55e';
+        var label = val > 25 ? 'EXTREMO' : val > 15 ? 'ALTO' : val > 8 ? 'MEDIO' : 'BAJO';
+        var bar = Math.min(val / 30 * 100, 100);
+        var el = document.getElementById('manipulation-index');
+        if (!el) return;
+        el.innerHTML = '<div style="display:flex;align-items:center;gap:12px;">' +
+            '<div style="flex:1;">' +
+                '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">' +
+                    '<span style="font-size:12px;color:#9ca3af;">Indice de Manipulacion</span>' +
+                    '<span style="font-size:12px;font-weight:bold;color:' + color + ';">' + label + '</span>' +
+                '</div>' +
+                '<div style="width:100%;background:rgba(255,255,255,0.1);border-radius:4px;height:8px;">' +
+                    '<div style="width:' + bar + '%;background:' + color + ';height:8px;border-radius:4px;transition:width 0.5s;"></div>' +
+                '</div>' +
+                '<div style="display:flex;justify-content:space-between;margin-top:2px;font-size:10px;color:#6b7280;">' +
+                    '<span>0</span><span>8</span><span>15</span><span>25+</span>' +
+                '</div>' +
+            '</div>' +
+            '<div style="text-align:center;min-width:60px;">' +
+                '<div class="mono" style="font-size:28px;font-weight:bold;color:' + color + ';">' + val + '</div>' +
+            '</div>' +
+        '</div>';
+    }
+
     function renderDiasRojo(diasData) {
         if (!diasData || !diasData.signals) {
             document.getElementById('dias-rojo-table').innerHTML = '<span class="text-gray-500">Sin datos</span>';
@@ -289,6 +319,9 @@
                   '<div class="text-gray-500 text-xs">' + p0.severity + '</div>' +
                   '<div class="text-gray-500 text-xs">Alertas: ' + p0.alerts_count + '</div>'
                 : '<div class="text-gray-500">Sin datos</div>';
+
+            // Manipulation Index
+            if (p0) renderManipulationIndex(p0);
 
             // Active signals
             document.getElementById('active-signals').innerHTML = d.active_details.map(function(s) {
