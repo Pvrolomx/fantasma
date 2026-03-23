@@ -23,6 +23,21 @@ class handler(BaseHTTPRequestHandler):
 
         try:
             qs = parse_qs(urlparse(self.path).query)
+            
+            # Debug mode: show env var status (no values, just presence)
+            if qs.get('debug', ['0'])[0] == '1':
+                import os
+                sk = os.getenv("SUPABASE_KEY", "")
+                su = os.getenv("SUPABASE_URL", "")
+                result = {
+                    "supabase_key_len": len(sk),
+                    "supabase_key_prefix": sk[:10] + "..." if len(sk) > 10 else "(empty)",
+                    "supabase_url_len": len(su),
+                    "supabase_url_prefix": su[:30] + "..." if len(su) > 30 else su,
+                }
+                self.wfile.write(json.dumps(result).encode())
+                return
+            
             days = int(qs.get('days', [30])[0])
 
             async def get_data():
