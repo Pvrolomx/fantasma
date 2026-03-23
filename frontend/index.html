@@ -122,6 +122,17 @@
             <div id="history-table" class="mt-4 text-xs"></div>
         </div>
 
+        <!-- News Digest -->
+        <div class="glass rounded-xl p-4 mb-6" id="news-section">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="font-bold text-blue-300">&#x1F4F0; Noticias Relevantes</h3>
+                <span class="text-xs text-gray-500" id="news-count"></span>
+            </div>
+            <div id="news-list" class="space-y-2 text-sm">
+                <span class="text-gray-500">Cargando noticias...</span>
+            </div>
+        </div>
+
         <!-- Active Signals -->
         <div class="glass rounded-xl p-4">
             <h3 class="font-bold text-gray-300 mb-3">Senales Activas</h3>
@@ -477,6 +488,36 @@
     }
 
     setTimeout(fetchHistory, 2000);
+
+    async function fetchNews() {
+        try {
+            var res = await fetch(API + '/news');
+            var d = await res.json();
+            if (d.error) {
+                document.getElementById('news-list').innerHTML = '<span class="text-gray-500">Error: ' + d.error + '</span>';
+                return;
+            }
+            document.getElementById('news-count').textContent = d.high_relevance + ' alta relevancia / ' + d.articles.length + ' total';
+            var html = '';
+            (d.articles || []).forEach(function(a) {
+                var relColor = a.relevance >= 2 ? 'text-red-400' : a.relevance >= 1 ? 'text-amber-400' : 'text-gray-400';
+                var dots = '';
+                for (var i = 0; i < a.relevance; i++) dots += '&#x1F534;';
+                if (!dots) dots = '&#x26AA;';
+                html += '<div class="flex items-start gap-2 py-1.5 border-b border-white/5">' +
+                    '<span class="text-xs mt-0.5">' + dots + '</span>' +
+                    '<div class="flex-1">' +
+                        '<a href="' + a.url + '" target="_blank" class="text-gray-200 hover:text-white">' + a.title + '</a>' +
+                        '<div class="text-xs text-gray-500">' + a.source + ' &middot; ' + a.date + ' &middot; ' + (a.lang === 'es' ? '&#x1F1F2;&#x1F1FD;' : '&#x1F1FA;&#x1F1F8;') + '</div>' +
+                    '</div></div>';
+            });
+            document.getElementById('news-list').innerHTML = html || '<span class="text-gray-500">Sin noticias recientes</span>';
+        } catch(e) {
+            document.getElementById('news-list').innerHTML = '<span class="text-gray-500">Error cargando noticias</span>';
+        }
+    }
+
+    setTimeout(fetchNews, 3000);
 
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js').catch(function(){});

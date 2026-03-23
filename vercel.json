@@ -26,6 +26,10 @@
     {
       "src": "api/dias_rojo_handler.py",
       "use": "@vercel/python"
+    },
+    {
+      "src": "api/news_handler.py",
+      "use": "@vercel/python"
     }
   ],
   "routes": [
@@ -52,6 +56,10 @@
     {
       "src": "/api/history",
       "dest": "/api/history_handler.py"
+    },
+    {
+      "src": "/api/news",
+      "dest": "/api/news_handler.py"
     },
     {
       "src": "/(.*)",
