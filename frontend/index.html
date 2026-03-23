@@ -189,12 +189,58 @@
         m.classList.add('flex');
     }
 
+
+    // Smart display value extraction per signal
+    function displayVal(s) {
+        if (s.value !== undefined && s.value !== null) return s.value;
+        switch(s.signal) {
+            case 'C3_CFTC':
+                if (s.net_contracts) return (s.net_contracts/1000).toFixed(0) + 'K';
+                break;
+            case 'C4_RESERVAS':
+                if (s.value_billions) return '$' + s.value_billions + 'B';
+                break;
+            case 'C5_SPREAD':
+                if (s.spread_bps !== undefined) return s.spread_bps + ' bps';
+                break;
+            case 'C6_CONTRARIAN':
+                if (s.deviation_pct !== undefined) return s.deviation_pct + '%';
+                break;
+            case 'G4_HY_SPREAD':
+                if (s.spread_proxy !== undefined) return s.spread_proxy;
+                break;
+            case 'G6_GOOGLE_TRENDS':
+                if (s.spike_ratio !== undefined) return s.spike_ratio + 'x';
+                if (s.note) return s.note.substring(0, 15);
+                break;
+            case 'G7_VOLATILITY':
+                if (s.volatility_20d_annualized !== undefined) return s.volatility_20d_annualized.toFixed(1) + '%';
+                break;
+            case 'G8_CARRY_TRADE':
+                if (s.spread_pct !== undefined) return s.spread_pct + '%';
+                break;
+            case 'G9_SWAP_LINES':
+                if (s.value_millions !== undefined) return '$' + s.value_millions + 'M';
+                break;
+            case 'G10_INTERBANK':
+                if (s.spread_bps !== undefined) return s.spread_bps + ' bps';
+                break;
+            case 'G11_DRAGON':
+                if (s.usdcny !== undefined) return s.usdcny;
+                break;
+            case 'O5_WAR_RISK':
+                if (s.spread !== undefined) return s.spread;
+                break;
+        }
+        return '\u2014';
+    }
+
     function signalRow(s) {
         if (s.error) return '<div class="flex justify-between text-gray-500"><span>' + s.signal + '</span><span>Error</span></div>';
         var pct = s.max_score ? Math.round((s.score/s.max_score)*100) : 0;
         var overflow = s.score > s.max_score;
         var color = overflow ? 'text-red-500 font-black' : pct > 60 ? 'text-red-400' : pct > 30 ? 'text-amber-400' : 'text-green-400';
-        var val = s.value !== undefined ? s.value : s.brent || s.spread || '—';
+        var val = displayVal(s);
         return '<div class="flex justify-between items-center">' +
             '<span class="text-gray-300 cursor-help border-b border-dotted border-gray-600" title="' + (TIPS[s.signal] || s.signal) + '" onclick="showTip(\'' + s.signal + '\')">' + s.signal + '</span>' +
             '<div class="flex items-center gap-2">' +
