@@ -42,12 +42,16 @@ def _extract_signal_value(signals, signal_name, field="value"):
 
 async def save_snapshot(report: dict):
     """Guarda el reporte en Supabase y local."""
-    # Local backup always
-    ensure_dir()
+    # Local backup (skip on read-only filesystem like Vercel)
     date_str = datetime.utcnow().strftime("%Y-%m-%d")
-    local_path = os.path.join(HISTORY_DIR, f"{date_str}.json")
-    with open(local_path, "w") as lf:
-        json.dump(report, lf, ensure_ascii=False, indent=2)
+    local_path = None
+    try:
+        ensure_dir()
+        local_path = os.path.join(HISTORY_DIR, f"{date_str}.json")
+        with open(local_path, "w") as lf:
+            json.dump(report, lf, ensure_ascii=False, indent=2)
+    except OSError:
+        pass  # Read-only filesystem
 
     # Supabase upsert
     try:
@@ -79,7 +83,7 @@ async def save_snapshot(report: dict):
         }
         async with httpx.AsyncClient() as client:
             resp = await client.post(
-                f"{SUPABASE_URL}/rest/v1/fantasma_daily_scores?on_conflict=date",
+                f"{SUPABASE_URL}/rest/v1/fantasma_daily_scores",
                 headers={**HEADERS, "Prefer": "resolution=merge-duplicates"},
                 json=row, timeout=15
             )
@@ -116,7 +120,7 @@ async def load_history(days: int = 30) -> list:
         date_from = (datetime.utcnow().date() - timedelta(days=days)).isoformat()
         async with httpx.AsyncClient() as client:
             resp = await client.get(
-                f"{SUPABASE_URL}/rest/v1/fantasma_daily_scores?on_conflict=date",
+                f"{SUPABASE_URL}/rest/v1/fantasma_daily_scores",
                 headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"},
                 params={
                     "select": "date,total_score,raw_score,alert_level,alert_emoji,core_mxn_score,global_overlay_score,ormuz_score,mexico_score,protocolo_0_active,active_signals,brent_price,usdmxn,vix",
@@ -150,7 +154,10 @@ async def load_history(days: int = 30) -> list:
 
 def _load_local_history(days: int = 30) -> list:
     """Fallback: carga historial de archivos locales."""
-    ensure_dir()
+    try:
+        ensure_dir()
+    except OSError:
+        return []  # Read-only filesystem (Vercel)
     results = []
     today = datetime.utcnow().date()
     for i in range(days):

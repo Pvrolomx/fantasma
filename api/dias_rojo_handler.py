@@ -12,6 +12,7 @@ import os
 sys.path.insert(0, os.path.dirname(__file__))
 
 from dias_rojo import calculate_dias_rojo
+from scoring import run_scoring
 
 
 class handler(BaseHTTPRequestHandler):
@@ -22,7 +23,9 @@ class handler(BaseHTTPRequestHandler):
         self.end_headers()
 
         try:
-            result = asyncio.run(calculate_dias_rojo())
+            # Run scoring first to get current report, then pass to dias_rojo
+            current_report = asyncio.run(run_scoring())
+            result = asyncio.run(calculate_dias_rojo(current_report=current_report))
             self.wfile.write(json.dumps(result, ensure_ascii=False).encode())
         except Exception as e:
             error = {"error": str(e)}
