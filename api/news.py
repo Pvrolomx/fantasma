@@ -22,14 +22,14 @@ NEWSAPI_URL = "https://newsapi.org/v2/everything"
 
 # Queries relevantes para el Observatorio
 QUERIES = {
-    "en": '(Mexico peso OR Banxico OR USDMXN OR "carry trade" Mexico OR Ormuz petroleum oil)',
-    "es": '(peso mexicano OR Banxico OR "tipo de cambio" OR petroleo Ormuz OR "carry trade")',
+    "en": '(Mexico peso OR Banxico OR USDMXN OR "carry trade" OR Ormuz OR "oil crisis" OR "Iran oil" OR Brent crude emerging)',
+    "es": '(peso mexicano OR Banxico OR "tipo de cambio" OR Ormuz OR "crisis petroleo" OR "precio gasolina" OR "carry trade" OR "devaluacion")',
 }
 
 
 # Palabras clave para clasificar relevancia
 KEYWORDS_HIGH = ["banxico", "carry trade", "ormuz", "peso mexicano", "usdmxn", "devaluacion", "tipo de cambio", "reservas internacionales"]
-KEYWORDS_MEDIUM = ["petroleo", "brent", "iran", "japon", "yen", "fed", "tasas", "inflacion mexico", "nearshoring"]
+KEYWORDS_MEDIUM = ["petroleo", "petroleum", "oil", "crude", "brent", "iran", "ormuz", "hormuz", "japon", "japan", "yen", "fed", "tasas", "interest rate", "inflacion", "inflation", "nearshoring", "emerging market", "strait"]
 
 
 def _score_relevance(title: str, description: str) -> int:
