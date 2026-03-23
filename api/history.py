@@ -129,8 +129,10 @@ async def load_history(days: int = 30) -> list:
                 },
                 timeout=10
             )
+            print(f"Supabase load response: {resp.status_code} - {resp.text[:200]}")
             if resp.status_code == 200:
                 data = resp.json()
+                print(f"Supabase returned {len(data)} rows")
                 return [{
                     "date": r["date"],
                     "total_score": r["total_score"],
