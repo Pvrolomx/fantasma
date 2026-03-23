@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import Dict, List, Tuple
 
 from signals import (
+    get_g12_yen_pressure, get_c7_cetes_extranjeros, get_carry_trade_real,
     get_g8_carry_trade,
     get_g9_swap_lines, get_g10_interbank, get_g11_dragon, get_c6_contrarian,
     get_c1_fix, get_c2_tiie, get_c3_cftc, get_c4_reservas, get_c5_spread,
@@ -26,7 +27,7 @@ ALERT_LEVELS = {
     (81, 100): {"level": "CRITICO", "emoji": "⚫", "action": "Modo defensivo total"},
 }
 
-MAX_RAW_SCORE = 213  # 75 + 58 + 50 + 30
+MAX_RAW_SCORE = 223  # 213 + 5 (G12) + 5 (C7)  # 75 + 58 + 50 + 30
 
 
 def get_alert_level(score: int) -> Dict:
@@ -71,6 +72,9 @@ async def collect_all_signals() -> Tuple[int, List[Dict]]:
         ("M2_CORN", get_m2_corn()),
         ("M3_UREA", get_m3_urea()),
         ("C6_CONTRARIAN", get_c6_contrarian()),
+        ("C7_CETES_NR", get_c7_cetes_extranjeros()),
+        # Debate Multi-IA signals (22 Mar 2026)
+        ("G12_YEN", get_g12_yen_pressure()),
     ]
 
     results = await asyncio.gather(*[task[1] for task in tasks], return_exceptions=True)

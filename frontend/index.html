@@ -178,6 +178,8 @@
         'G10_INTERBANK': 'Spread SOFR-OBFR. Mide si los bancos confian entre si para prestarse overnight. Si divergen >10bps, hay estres oculto. Se disparo antes de 2008, marzo 2020, y SVB 2023.',
         'G11_DRAGON': 'USD/CNY. Si el yuan se debilita (>7.2), China esta bajo presion. Impacta commodities, emergentes, y el flujo de petroleo del Golfo.',
         'C6_CONTRARIAN': 'Consenso de analistas vs realidad. Si los expertos con info privilegiada dicen X, preparate para no-X. En 2025 dijeron peso a 21 y fue a 17.5.',
+        'C7_CETES_NR': 'Tasa que pagan Cetes a extranjeros en subasta semanal. Si sube mucho (>8%), exigen mas premio por riesgo Mexico. Si baja mientras el peso sigue fuerte, alguien fantasma sostiene el tipo de cambio.',
+        'G12_YEN_PRESSURE': 'USD/JPY. Si el yen se fortalece (numero baja), carry traders venden pesos para pagar deudas en yenes. Gatillo mas rapido de unwind masivo del carry trade.',
     };
 
     function showTip(signal) {
@@ -227,6 +229,12 @@
                 break;
             case 'G11_DRAGON':
                 if (s.usdcny !== undefined) return s.usdcny;
+                break;
+            case 'G12_YEN_PRESSURE':
+                if (s.usdjpy_current !== undefined) return s.usdjpy_current;
+                break;
+            case 'C7_CETES_NR':
+                if (s.nr_rate !== undefined) return s.nr_rate + '%';
                 break;
             case 'O5_WAR_RISK':
                 if (s.spread !== undefined) return s.spread;

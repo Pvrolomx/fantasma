@@ -19,3 +19,5 @@ __all__ = [
     'get_g8_carry_trade',
     'get_g9_swap_lines', 'get_g10_interbank', 'get_g11_dragon', 'get_c6_contrarian',
 ]
+
+from .debate_signals import get_g12_yen_pressure, get_c7_cetes_extranjeros, get_carry_trade_real

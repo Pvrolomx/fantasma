@@ -42,6 +42,9 @@ RED_THRESHOLDS = {
     "G5_COPPER":   {"field": "monthly_change_pct", "op": "<", "threshold": -5, "label": "Cobre (caida)"},
     # Modulo Core MXN
     "C1_FIX":      {"field": "daily_change_pct", "op": ">", "threshold": 1.5, "label": "FIX Banxico"},
+    # Debate Multi-IA (22 Mar 2026)
+    "G12_YEN_PRESSURE": {"field": "yen_strengthening_pct", "op": ">", "threshold": 1.0, "label": "Presion Yen"},
+    "C7_CETES_NR": {"field": "nr_rate", "op": ">", "threshold": 8.0, "label": "Cetes Extranjeros"},
 }
 
 
