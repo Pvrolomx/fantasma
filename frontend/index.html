@@ -21,19 +21,26 @@
         .glass-amber { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); }
         .pulse { animation: pulse 2s infinite; }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
-        .score-ring { width:180px; height:180px; border-radius:50%; position:relative; display:flex; align-items:center; justify-content:center; }
+        .score-ring { width:140px; height:140px; border-radius:50%; position:relative; display:flex; align-items:center; justify-content:center; }
         .score-ring::before { content:''; position:absolute; inset:0; border-radius:50%; padding:6px;
             background: conic-gradient(var(--ring-color,#22c55e) calc(var(--score,0)*1%), rgba(255,255,255,0.1) 0);
             -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #fff calc(100% - 5px));
             mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #fff calc(100% - 5px)); }
         .module-card { transition: all 0.3s; }
         .module-card:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+        /* Mobile responsive */
+        @media (max-width: 640px) {
+            body { padding: 8px !important; }
+            .score-ring { width: 120px !important; height: 120px !important; }
+            .score-ring::before { padding: 4px !important; }
+            h1 { font-size: 1.25rem !important; }
+        }
     </style>
 </head>
-<body class="text-white p-4 md:p-6">
+<body class="text-white p-2 sm:p-4 md:p-6">
     <div class="max-w-6xl mx-auto">
         <!-- Header -->
-        <div class="flex items-center justify-between mb-6">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-2">
             <div>
                 <h1 class="text-2xl md:text-3xl font-bold">
                     <span class="text-red-500">&#x1F441;</span> OBSERVATORIO
@@ -48,7 +55,7 @@
         </div>
 
         <!-- Protocolo 0 Banner -->
-        <div id="protocolo-banner" class="hidden glass-red rounded-xl p-4 mb-6">
+        <div id="protocolo-banner" class="hidden glass-red rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
             <div class="flex items-center gap-3">
                 <span class="text-2xl pulse">&#x26A0;</span>
                 <div>
@@ -61,55 +68,55 @@
         </div>
 
         <!-- Main Score -->
-        <div class="glass rounded-2xl p-6 mb-6 flex flex-col md:flex-row items-center gap-6">
+        <div class="glass rounded-2xl p-4 sm:p-6 mb-4 sm:mb-6 flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
             <div class="score-ring" id="score-ring">
                 <div class="text-center">
-                    <div id="score-value" class="text-4xl font-bold mono">--</div>
+                    <div id="score-value" class="text-3xl sm:text-4xl font-bold mono">--</div>
                     <div id="score-label" class="text-xs text-gray-400">SCORE</div>
                 </div>
             </div>
             <div class="flex-1">
-                <div id="alert-level" class="text-2xl font-bold mb-1">Cargando...</div>
+                <div id="alert-level" class="text-xl sm:text-2xl font-bold mb-1">Cargando...</div>
                 <div id="alert-action" class="text-gray-400 mb-3"></div>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-2" id="module-bars"></div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2" id="module-bars"></div>
             </div>
         </div>
 
         <!-- 4 Module Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <div class="module-card glass rounded-xl p-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
+            <div class="module-card glass rounded-xl p-3 sm:p-4">
                 <h3 class="font-bold text-amber-400 mb-3">&#x1F310; M1: Pulso Macro</h3>
                 <div id="mod-core" class="space-y-2 text-sm"></div>
             </div>
-            <div class="module-card glass rounded-xl p-4">
+            <div class="module-card glass rounded-xl p-3 sm:p-4">
                 <h3 class="font-bold text-red-400 mb-3">&#x1F6E2; M2: Coreografia (Ormuz)</h3>
                 <div id="mod-ormuz" class="space-y-2 text-sm"></div>
             </div>
-            <div class="module-card glass rounded-xl p-4">
+            <div class="module-card glass rounded-xl p-3 sm:p-4">
                 <h3 class="font-bold text-green-400 mb-3">&#x1F1F2;&#x1F1FD; M3: Impacto Local</h3>
                 <div id="mod-mexico" class="space-y-2 text-sm"></div>
             </div>
-            <div class="module-card glass rounded-xl p-4">
+            <div class="module-card glass rounded-xl p-3 sm:p-4">
                 <h3 class="font-bold text-purple-400 mb-3">&#x1F50D; Protocolo 0: Coherencia</h3>
                 <div id="mod-protocolo" class="space-y-2 text-sm"></div>
             </div>
         </div>
 
         <!-- Dias en Rojo -->
-        <div class="glass rounded-xl p-4 mb-6" id="dias-rojo-section">
+        <div class="glass rounded-xl p-3 sm:p-4 mb-4 sm:mb-6" id="dias-rojo-section">
             <div class="flex items-center justify-between mb-3">
                 <h3 class="font-bold text-red-300">&#x1F525; Dias en Rojo</h3>
                 <span class="text-xs text-gray-500" id="dias-rojo-summary"></span>
             </div>
-            <div id="dias-rojo-table" class="text-sm">
+            <div id="dias-rojo-table" class="text-xs sm:text-sm">
                 <span class="text-gray-500">Cargando...</span>
             </div>
         </div>
 
         <!-- History Chart -->
-        <div class="glass rounded-xl p-4 mb-6">
+        <div class="glass rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
             <div class="flex items-center justify-between mb-3">
-                <h3 class="font-bold text-gray-300">Evolucion Diaria</h3>
+                <h3 class="font-bold text-gray-300 text-sm sm:text-base">Evolucion Diaria</h3>
                 <select id="history-days" onchange="fetchHistory()" class="bg-white/10 text-white text-xs rounded px-2 py-1 border border-white/20">
                     <option value="7">7 dias</option>
                     <option value="14">14 dias</option>
@@ -123,7 +130,7 @@
         </div>
 
         <!-- News Digest -->
-        <div class="glass rounded-xl p-4 mb-6" id="news-section">
+        <div class="glass rounded-xl p-3 sm:p-4 mb-4 sm:mb-6" id="news-section">
             <div class="flex items-center justify-between mb-3">
                 <h3 class="font-bold text-blue-300">&#x1F4F0; Noticias Relevantes</h3>
                 <span class="text-xs text-gray-500" id="news-count"></span>
@@ -136,7 +143,7 @@
         <!-- Active Signals -->
         <div class="glass rounded-xl p-4">
             <h3 class="font-bold text-gray-300 mb-3">Senales Activas</h3>
-            <div id="active-signals" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 text-sm"></div>
+            <div id="active-signals" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-sm"></div>
         </div>
     </div>
 
@@ -309,7 +316,7 @@
                 '</div>' +
             '</div>' +
             '<div style="text-align:center;min-width:60px;">' +
-                '<div class="mono" style="font-size:28px;font-weight:bold;color:' + color + ';">' + val + '</div>' +
+                '<div class="mono" style="font-size:22px;font-weight:bold;color:' + color + ';">' + val + '</div>' +
             '</div>' +
         '</div>';
     }
