@@ -15,8 +15,8 @@ import httpx
 from datetime import datetime, timedelta
 from pathlib import Path
 
-SUPABASE_URL = os.getenv("SUPABASE_URL", "https://pwsrjmhmxqfxmcadhjtz.supabase.co")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
+SUPABASE_URL = os.getenv("SUPABASE_URL", "https://pwsrjmhmxqfxmcadhjtz.supabase.co").strip()
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "").strip()
 HEADERS = {
     "apikey": SUPABASE_KEY,
     "Authorization": f"Bearer {SUPABASE_KEY}",
@@ -149,8 +149,7 @@ async def load_history(days: int = 30) -> list:
                 } for r in data]
     except Exception as e:
         print(f"Supabase load error: {e}, falling back to local")
-        # Return error info as a special entry so we can debug
-        return [{"_debug_error": str(e)}]
+        pass  # Fall through to local fallback
 
     # Fallback local
     return _load_local_history(days)

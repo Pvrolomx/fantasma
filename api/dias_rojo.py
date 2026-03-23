@@ -18,8 +18,8 @@ try:
 except ImportError:
     pass
 
-SUPABASE_URL = os.getenv("SUPABASE_URL", "https://pwsrjmhmxqfxmcadhjtz.supabase.co")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
+SUPABASE_URL = os.getenv("SUPABASE_URL", "https://pwsrjmhmxqfxmcadhjtz.supabase.co").strip()
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "").strip()
 
 # ============================================================
 # UMBRALES ABSOLUTOS — CONGELADOS. NO SE RECALIBRAN.
