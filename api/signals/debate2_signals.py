@@ -174,23 +174,23 @@ async def get_g13_cftc_momentum() -> Tuple[float, Dict]:
 
 
 # ============================================================
-# O6: CHICAGO FED SUPPLY CHAIN STRESS INDEX (CBFSAI)
-# Proxy de estres logistico global. Complementa Ormuz.
-# Fuente: FRED CBFSAI
+# O6: CHICAGO FED NATIONAL FINANCIAL CONDITIONS INDEX (NFCI)
+# Estres financiero global. Complementa Ormuz.
+# Fuente: FRED NFCI (semanal, viernes)
 # ============================================================
 
 async def get_o6_freight() -> Tuple[float, Dict]:
     """
     O6: Supply Chain Stress (5 pts max)
-    Chicago Fed National Financial Conditions Supply Chain Subindex.
-    Positivo = estres, negativo = normal. >1.0 = disrupciones significativas.
+    Chicago Fed National Financial Conditions Index (NFCI).
+    Negativo = holgado, positivo = apretado. >0.5 = estres financiero significativo.
     """
     async with httpx.AsyncClient() as client:
         try:
             resp = await client.get(
                 "https://api.stlouisfed.org/fred/series/observations",
                 params={
-                    "series_id": "CBFSAI",
+                    "series_id": "NFCI",
                     "api_key": FRED_KEY,
                     "file_type": "json",
                     "sort_order": "desc",
@@ -213,11 +213,11 @@ async def get_o6_freight() -> Tuple[float, Dict]:
                     break
 
             score = 0
-            if current > 2.0:
+            if current > 1.0:
                 score = 5
-            elif current > 1.0:
-                score = 3
             elif current > 0.5:
+                score = 3
+            elif current > 0.0:
                 score = 1
 
             return score, {
@@ -225,8 +225,8 @@ async def get_o6_freight() -> Tuple[float, Dict]:
                 "value": round(current, 2),
                 "date": current_date,
                 "prev_value": round(prev, 2) if prev else None,
-                "status": "ESTRES" if current > 1.0 else "NORMAL",
-                "note": "Chicago Fed Supply Chain Index. Positivo = estres logistico. >1.0 = disrupciones.",
+                "status": "ESTRES" if current > 0.5 else "HOLGADO" if current < 0 else "NEUTRAL",
+                "note": "NFCI: Negativo = condiciones holgadas. Positivo = estres. >0.5 = apretado significativamente.",
                 "score": score,
                 "max_score": 5,
             }
