@@ -76,7 +76,7 @@ async def _get_prev_week_cftc() -> Dict:
     try:
         async with httpx.AsyncClient() as client:
             resp = await client.get(
-                f"{SUPABASE_URL}/rest/v1/fantasma_cftc_weekly",
+                f"{SUPABASE_URL}/rest/v1/fantasma_obs_cftc_weekly",
                 headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"},
                 params={"select": "*", "order": "report_date.desc", "limit": "2"},
                 timeout=10,
@@ -105,7 +105,7 @@ async def _save_cftc_snapshot(data: Dict):
         }
         async with httpx.AsyncClient() as client:
             await client.post(
-                f"{SUPABASE_URL}/rest/v1/fantasma_cftc_weekly",
+                f"{SUPABASE_URL}/rest/v1/fantasma_obs_cftc_weekly",
                 headers={
                     "apikey": SUPABASE_KEY,
                     "Authorization": f"Bearer {SUPABASE_KEY}",
