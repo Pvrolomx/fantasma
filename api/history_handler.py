@@ -23,50 +23,6 @@ class handler(BaseHTTPRequestHandler):
 
         try:
             qs = parse_qs(urlparse(self.path).query)
-            
-            # Debug mode: show env var status (no values, just presence)
-            if qs.get('debug', ['0'])[0] == '1':
-                sk = os.getenv("SUPABASE_KEY", "")
-                su = os.getenv("SUPABASE_URL", "")
-                result = {
-                    "supabase_key_len": len(sk),
-                    "supabase_key_prefix": sk[:10] + "..." if len(sk) > 10 else "(empty)",
-                    "supabase_url_len": len(su),
-                    "supabase_url_prefix": su[:30] + "..." if len(su) > 30 else su,
-                }
-                self.wfile.write(json.dumps(result).encode())
-                return
-            
-            # Test mode: direct Supabase query with error capture
-            if qs.get('test', ['0'])[0] == '1':
-                from datetime import datetime, timedelta
-                sk = os.getenv("SUPABASE_KEY", "")
-                su = os.getenv("SUPABASE_URL", "")
-                date_from = (datetime.utcnow().date() - timedelta(days=7)).isoformat()
-                
-                async def test_query():
-                    async with httpx.AsyncClient() as client:
-                        resp = await client.get(
-                            f"{su}/rest/v1/fantasma_daily_scores",
-                            headers={"apikey": sk, "Authorization": f"Bearer {sk}"},
-                            params={
-                                "select": "date,total_score",
-                                "date": f"gte.{date_from}",
-                                "order": "date.asc",
-                            },
-                            timeout=10
-                        )
-                        return {
-                            "status_code": resp.status_code,
-                            "response_text": resp.text[:500],
-                            "url_used": su[:30] + "...",
-                            "key_len": len(sk),
-                        }
-                
-                result = asyncio.run(test_query())
-                self.wfile.write(json.dumps(result).encode())
-                return
-            
             days = int(qs.get('days', [30])[0])
 
             async def get_data():

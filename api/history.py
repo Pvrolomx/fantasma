@@ -129,10 +129,8 @@ async def load_history(days: int = 30) -> list:
                 },
                 timeout=10
             )
-            print(f"Supabase load response: {resp.status_code} - {resp.text[:200]}")
             if resp.status_code == 200:
                 data = resp.json()
-                print(f"Supabase returned {len(data)} rows")
                 return [{
                     "date": r["date"],
                     "total_score": r["total_score"],
@@ -149,7 +147,7 @@ async def load_history(days: int = 30) -> list:
                 } for r in data]
     except Exception as e:
         print(f"Supabase load error: {e}, falling back to local")
-        pass  # Fall through to local fallback
+        pass  # Supabase failed, fall through to local fallback
 
     # Fallback local
     return _load_local_history(days)
