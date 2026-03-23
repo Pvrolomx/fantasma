@@ -21,3 +21,4 @@ __all__ = [
 ]
 
 from .debate_signals import get_g12_yen_pressure, get_c7_cetes_extranjeros, get_carry_trade_real
+from .debate2_signals import get_g13_cftc_momentum, get_o6_freight

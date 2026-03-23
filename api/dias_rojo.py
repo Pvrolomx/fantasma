@@ -45,6 +45,8 @@ RED_THRESHOLDS = {
     # Debate Multi-IA (22 Mar 2026)
     "G12_YEN_PRESSURE": {"field": "yen_strengthening_pct", "op": ">", "threshold": 1.0, "label": "Presion Yen"},
     "C7_CETES_NR": {"field": "nr_rate", "op": ">", "threshold": 8.0, "label": "Cetes Extranjeros"},
+    # Debate Multi-IA Round 2 (23 Mar 2026)
+    "G13_CFTC_MOMENTUM": {"field": "weekly_change", "op": "<", "threshold": -5000, "label": "CFTC Momentum"},
 }
 
 

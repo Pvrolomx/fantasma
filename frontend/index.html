@@ -180,6 +180,8 @@
         'C6_CONTRARIAN': 'Consenso de analistas vs realidad. Si los expertos con info privilegiada dicen X, preparate para no-X. En 2025 dijeron peso a 21 y fue a 17.5.',
         'C7_CETES_NR': 'Tasa que pagan Cetes a extranjeros en subasta semanal. Si sube mucho (>8%), exigen mas premio por riesgo Mexico. Si baja mientras el peso sigue fuerte, alguien fantasma sostiene el tipo de cambio.',
         'G12_YEN_PRESSURE': 'USD/JPY. Si el yen se fortalece (numero baja), carry traders venden pesos para pagar deudas en yenes. Gatillo mas rapido de unwind masivo del carry trade.',
+        'G13_CFTC_MOMENTUM': 'Cambio semanal en posiciones de hedge funds en futuros MXN. Si los especuladores estan en maximo long peso y empiezan a voltear, es la senal mas temprana de que el carry trade se rompe.',
+        'O6_FREIGHT': 'Chicago Fed Supply Chain Stress Index. Positivo = estres logistico global. Si sube con petroleo alto, la presion es de supply chain, no solo especulacion.',
     };
 
     function showTip(signal) {
@@ -238,6 +240,12 @@
                 break;
             case 'O5_WAR_RISK':
                 if (s.spread !== undefined) return s.spread;
+                break;
+            case 'G13_CFTC_MOMENTUM':
+                if (s.net_contracts !== undefined) return (s.net_contracts/1000).toFixed(0) + 'K';
+                break;
+            case 'O6_FREIGHT':
+                if (s.value !== undefined) return s.value;
                 break;
         }
         return '\u2014';
