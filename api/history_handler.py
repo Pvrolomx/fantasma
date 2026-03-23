@@ -26,7 +26,6 @@ class handler(BaseHTTPRequestHandler):
             
             # Debug mode: show env var status (no values, just presence)
             if qs.get('debug', ['0'])[0] == '1':
-                import os
                 sk = os.getenv("SUPABASE_KEY", "")
                 su = os.getenv("SUPABASE_URL", "")
                 result = {
@@ -40,7 +39,6 @@ class handler(BaseHTTPRequestHandler):
             
             # Test mode: direct Supabase query with error capture
             if qs.get('test', ['0'])[0] == '1':
-                import httpx
                 from datetime import datetime, timedelta
                 sk = os.getenv("SUPABASE_KEY", "")
                 su = os.getenv("SUPABASE_URL", "")
