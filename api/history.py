@@ -149,6 +149,8 @@ async def load_history(days: int = 30) -> list:
                 } for r in data]
     except Exception as e:
         print(f"Supabase load error: {e}, falling back to local")
+        # Return error info as a special entry so we can debug
+        return [{"_debug_error": str(e)}]
 
     # Fallback local
     return _load_local_history(days)
