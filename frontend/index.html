@@ -286,6 +286,15 @@
             case 'O6_FREIGHT':
                 if (s.value !== undefined) return s.value;
                 break;
+            case 'F1_USDT_P2P':
+                if (s.spread_buy_pct !== undefined) return s.spread_buy_pct + '%';
+                break;
+            case 'F2_ORO_FISICO':
+                if (s.estimated_premium_pct !== undefined) return s.estimated_premium_pct + '%';
+                break;
+            case 'F3_TECH_BLUE':
+                if (s.spread_pct !== undefined) return s.spread_pct + '%';
+                break;
         }
         return '\u2014';
     }
