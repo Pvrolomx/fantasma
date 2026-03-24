@@ -355,41 +355,17 @@ async def get_f2_oro_fisico() -> Tuple[float, Dict]:
 APPLE_IPHONE_PRICE_USD = 1199  # iPhone 16 Pro Max 256GB official Apple US
 
 
-async def _get_mercadolibre_iphone_avg() -> Tuple[float, int]:
+async def _get_apple_mx_iphone_price() -> Tuple[float, str]:
     """
-    Fetch average iPhone 16 Pro Max price from MercadoLibre Mexico.
-    Returns: avg_price_mxn, num_listings
+    Get iPhone 16 Pro Max 256GB price from Apple Store Mexico.
+    Apple MX publishes prices directly. More reliable than ML API.
+    Returns: price_mxn, source
     """
-    try:
-        async with httpx.AsyncClient() as client:
-            resp = await client.get(
-                'https://api.mercadolibre.com/sites/MLM/search',
-                params={
-                    'q': 'iPhone 16 Pro Max 256GB nuevo',
-                    'condition': 'new',
-                    'sort': 'price_asc',
-                    'limit': 20,
-                },
-                headers={'User-Agent': 'Mozilla/5.0'},
-                timeout=15,
-            )
-            data = resp.json()
-            results = data.get('results', [])
-            if not results:
-                return 0.0, 0
-
-            prices = []
-            for item in results:
-                price = item.get('price', 0)
-                # Filter outliers: iPhone 16 Pro Max should be $20k-$45k MXN
-                if 20000 < price < 45000:
-                    prices.append(price)
-
-            if prices:
-                return round(sum(prices) / len(prices), 2), len(prices)
-    except Exception:
-        pass
-    return 0.0, 0
+    # Apple MX official price for iPhone 16 Pro Max 256GB: $30,999 MXN
+    # Updated manually when Apple changes pricing.
+    # To automate: scrape apple.com/mx/shop/buy-iphone
+    APPLE_MX_PRICE = 30999.0
+    return APPLE_MX_PRICE, 'APPLE_MX_OFFICIAL'
 
 
 async def get_f3_tech_blue() -> Tuple[float, Dict]:
@@ -401,25 +377,25 @@ async def get_f3_tech_blue() -> Tuple[float, Dict]:
     ya esta priceando una devaluacion.
     """
     fix = await _get_fix_banxico()
-    ml_avg, num_listings = await _get_mercadolibre_iphone_avg()
+    mx_price, source = await _get_apple_mx_iphone_price()
 
-    if fix == 0 or ml_avg == 0:
+    if fix == 0 or mx_price == 0:
         return 0, {
             'signal': 'F3_TECH_BLUE',
-            'error': 'No data from MercadoLibre or Banxico',
+            'error': 'No data',
             'score': 0, 'max_score': 7,
         }
 
-    # The implicit exchange rate from ML pricing
-    tech_blue_rate = round(ml_avg / APPLE_IPHONE_PRICE_USD, 4)
+    # The implicit exchange rate: what Apple MX thinks 1 USD is worth
+    tech_blue_rate = round(mx_price / APPLE_IPHONE_PRICE_USD, 4)
 
-    # Spread: how much more expensive is the ML price vs official FIX
+    # Spread: Apple MX price vs (Apple US * FIX Banxico)
     theoretical_mxn = APPLE_IPHONE_PRICE_USD * fix
-    spread_pct = round(((ml_avg - theoretical_mxn) / theoretical_mxn) * 100, 2)
+    spread_pct = round(((mx_price - theoretical_mxn) / theoretical_mxn) * 100, 2)
 
     await _save_friction_snapshot('F3_TECH_BLUE', spread_pct, {
-        'ml_avg': ml_avg, 'tech_blue_rate': tech_blue_rate, 'fix': fix,
-        'listings': num_listings,
+        'mx_price': mx_price, 'tech_blue_rate': tech_blue_rate, 'fix': fix,
+        'source': source,
     })
     history = await _get_prev_friction('F3_TECH_BLUE')
     accel = _calc_acceleration(spread_pct, history)
@@ -445,16 +421,16 @@ async def get_f3_tech_blue() -> Tuple[float, Dict]:
 
     return score, {
         'signal': 'F3_TECH_BLUE',
-        'ml_avg_price_mxn': ml_avg,
+        'apple_mx_price_mxn': mx_price,
         'apple_us_price_usd': APPLE_IPHONE_PRICE_USD,
         'theoretical_mxn': round(theoretical_mxn, 2),
         'tech_blue_rate': tech_blue_rate,
         'fix_banxico': fix,
         'spread_pct': spread_pct,
-        'num_listings': num_listings,
+        'source': source,
         'acceleration': accel,
         'status': status,
-        'note': 'Dolar implicito del iPhone en MercadoLibre vs Apple US. GLM-5 lo llamo Tech-Blue Dollar. >10% = devaluacion priceada.',
+        'note': 'Dolar implicito Apple MX vs Apple US. tech_blue_rate = tipo de cambio que Apple cree real. >10% = Apple ya precifica devaluacion.',
         'score': score,
         'max_score': 7,
     }
