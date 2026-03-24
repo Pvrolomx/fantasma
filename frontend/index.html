@@ -113,10 +113,13 @@
             </div>
         </div>
 
-        <!-- History Chart -->
+        <!-- History Chart (collapsible) -->
         <div class="glass rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
-            <div class="flex items-center justify-between mb-3">
-                <h3 class="font-bold text-gray-300 text-sm sm:text-base">Evolucion Diaria</h3>
+            <div class="flex items-center justify-between cursor-pointer" onclick="toggleHistory()">
+                <h3 class="font-bold text-gray-300 text-sm sm:text-base">&#x1F4C8; Evolucion Diaria <span id="history-toggle" class="text-xs text-gray-500 ml-1">&#x25B6;</span></h3>
+            </div>
+            <div id="history-content" class="hidden mt-3">
+                <div class="flex justify-end mb-2">
                 <select id="history-days" onchange="fetchHistory()" class="bg-white/10 text-white text-xs rounded px-2 py-1 border border-white/20">
                     <option value="7">7 dias</option>
                     <option value="14">14 dias</option>
@@ -127,6 +130,7 @@
             <div id="history-summary" class="text-sm mb-3"></div>
             <canvas id="historyChart" height="200"></canvas>
             <div id="history-table" class="mt-4 text-xs"></div>
+            </div>
         </div>
 
         <!-- News Digest -->
@@ -166,6 +170,19 @@
     window.addEventListener('appinstalled', () => {
         document.getElementById('install-btn').classList.add('hidden');
     });
+
+    function toggleHistory() {
+        var el = document.getElementById('history-content');
+        var arrow = document.getElementById('history-toggle');
+        if (el.classList.contains('hidden')) {
+            el.classList.remove('hidden');
+            arrow.innerHTML = '&#x25BC;';
+            fetchHistory();
+        } else {
+            el.classList.add('hidden');
+            arrow.innerHTML = '&#x25B6;';
+        }
+    }
 
     const API = window.location.origin + '/api';
     const COLORS = { BAJO:'#22c55e', MODERADO:'#eab308', ELEVADO:'#f97316', ALTO:'#ef4444', CRITICO:'#1f2937' };
@@ -494,7 +511,7 @@
         }
     }
 
-    setTimeout(fetchHistory, 2000);
+    // History loads on expand (collapsible)
 
     async function fetchNews() {
         try {
