@@ -504,21 +504,26 @@
                 document.getElementById('news-list').innerHTML = '<span class="text-gray-500">Error: ' + d.error + '</span>';
                 return;
             }
-            document.getElementById('news-count').textContent = d.high_relevance + ' alta relevancia / ' + d.articles.length + ' total';
+            var countText = d.criticas + ' criticas, ' + d.altas + ' altas / ' + d.total + ' total';
+            document.getElementById('news-count').textContent = countText;
             var html = '';
+            if (d.silencio_sospechoso) {
+                html += '<div class="glass-amber rounded p-2 mb-2 text-xs text-amber-300">&#x26A0; ' + d.silencio_sospechoso + '</div>';
+            }
             (d.articles || []).forEach(function(a) {
-                var relColor = a.relevance >= 2 ? 'text-red-400' : a.relevance >= 1 ? 'text-amber-400' : 'text-gray-400';
-                var dots = '';
-                for (var i = 0; i < a.relevance; i++) dots += '&#x1F534;';
-                if (!dots) dots = '&#x26AA;';
+                var badgeColor = a.badge === 'CRITICA' ? 'bg-red-600' : a.badge === 'ALTA' ? 'bg-amber-600' : 'bg-gray-600';
+                var badgeText = a.badge === 'CRITICA' ? '&#x1F534;' : a.badge === 'ALTA' ? '&#x1F7E0;' : '&#x26AA;';
                 html += '<div class="flex items-start gap-2 py-1.5 border-b border-white/5">' +
-                    '<span class="text-xs mt-0.5">' + dots + '</span>' +
-                    '<div class="flex-1">' +
-                        '<a href="' + a.url + '" target="_blank" class="text-gray-200 hover:text-white">' + a.title + '</a>' +
-                        '<div class="text-xs text-gray-500">' + a.source + ' &middot; ' + a.date + ' &middot; ' + (a.lang === 'es' ? '&#x1F1F2;&#x1F1FD;' : '&#x1F1FA;&#x1F1F8;') + '</div>' +
+                    '<div class="flex flex-col items-center gap-0.5 min-w-[28px]">' +
+                        '<span class="text-xs">' + badgeText + '</span>' +
+                        '<span class="text-[10px] mono text-gray-500">' + a.score + '/10</span>' +
+                    '</div>' +
+                    '<div class="flex-1 min-w-0">' +
+                        '<a href="' + a.url + '" target="_blank" class="text-gray-200 hover:text-white text-sm leading-tight block">' + a.title + '</a>' +
+                        '<div class="text-xs text-gray-500 mt-0.5">' + a.source + ' &middot; ' + a.date + '</div>' +
                     '</div></div>';
             });
-            document.getElementById('news-list').innerHTML = html || '<span class="text-gray-500">Sin noticias recientes</span>';
+            document.getElementById('news-list').innerHTML = html || '<span class="text-gray-500">Sin noticias relevantes (score &lt; 4)</span>';
         } catch(e) {
             document.getElementById('news-list').innerHTML = '<span class="text-gray-500">Error cargando noticias</span>';
         }
