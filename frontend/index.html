@@ -100,6 +100,10 @@
                 <h3 class="font-bold text-purple-400 mb-3">&#x1F50D; Protocolo 0: Coherencia</h3>
                 <div id="mod-protocolo" class="space-y-2 text-sm"></div>
             </div>
+            <div class="module-card glass rounded-xl p-3 sm:p-4 sm:col-span-2">
+                <h3 class="font-bold text-cyan-400 mb-3">&#x1F30A; M5: Friccion Real <span class="text-xs text-gray-500 font-normal">(mercados paralelos)</span></h3>
+                <div id="mod-friccion" class="space-y-2 text-sm"></div>
+            </div>
         </div>
 
         <!-- Dias en Rojo -->
@@ -396,6 +400,7 @@
                 renderModuleBar('Global', mods.global_overlay.score, mods.global_overlay.max),
                 renderModuleBar('Ormuz', mods.ormuz_coreografia.score, mods.ormuz_coreografia.max),
                 renderModuleBar('Mexico', mods.mexico_local.score, mods.mexico_local.max),
+                mods.friccion_real ? renderModuleBar('Friccion', mods.friccion_real.score, mods.friccion_real.max) : '',
             ].join('');
 
             document.getElementById('mod-core').innerHTML =
@@ -404,6 +409,8 @@
                 mods.ormuz_coreografia.signals.map(signalRow).join('');
             document.getElementById('mod-mexico').innerHTML =
                 mods.mexico_local.signals.map(signalRow).join('');
+            document.getElementById('mod-friccion').innerHTML =
+                mods.friccion_real ? mods.friccion_real.signals.map(signalRow).join('') : '<div class="text-gray-500">Cargando...</div>';
 
             // Protocolo 0
             var p0 = d.protocolo_0;

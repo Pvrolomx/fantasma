@@ -47,6 +47,10 @@ RED_THRESHOLDS = {
     "C7_CETES_NR": {"field": "nr_rate", "op": ">", "threshold": 8.0, "label": "Cetes Extranjeros"},
     # Debate Multi-IA Round 2 (23 Mar 2026)
     "G13_CFTC_MOMENTUM": {"field": "weekly_change", "op": "<", "threshold": -5000, "label": "CFTC Momentum"},
+    # Modulo Friccion Real (24 Mar 2026) - Debate Multi-IA Round 3
+    "F1_USDT_P2P": {"field": "spread_buy_pct", "op": ">", "threshold": 2.0, "label": "USDT P2P Spread"},
+    "F2_ORO_FISICO": {"field": "estimated_premium_pct", "op": ">", "threshold": 15.0, "label": "Oro Fisico Premium"},
+    "F3_TECH_BLUE": {"field": "spread_pct", "op": ">", "threshold": 10.0, "label": "Tech-Blue Dollar"},
 }
 
 

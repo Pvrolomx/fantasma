@@ -1,6 +1,6 @@
 """
 FANTASMA / OBSERVATORIO - Motor de Scoring v2
-4 Modulos: Core MXN (75) + Global (58) + Ormuz (50) + Mexico (30) = 213 pts
+5 Modulos: Core MXN (75) + Global (63) + Ormuz (55) + Mexico (30) + Friccion (25) = 258 pts
 Score normalizado a 0-100.
 """
 import asyncio
@@ -17,6 +17,7 @@ from signals import (
     get_g6_google_trends, get_g7_volatility, get_fed_funds_rate,
     get_o1_brent, get_o2_gas_europe, get_o3_usdchf, get_o4_sofr, get_o5_war_risk,
     get_m1_usdmxn, get_m2_corn, get_m3_urea,
+    get_f1_usdt_p2p, get_f2_oro_fisico, get_f3_tech_blue,
 )
 from protocolo_cero import check_protocolo_cero
 
@@ -28,7 +29,7 @@ ALERT_LEVELS = {
     (81, 100): {"level": "CRITICO", "emoji": "⚫", "action": "Modo defensivo total"},
 }
 
-MAX_RAW_SCORE = 233  # 223 + 5 (G13) + 5 (O6)  # Core 75 + Global 63 + Ormuz 55 + Mexico 30
+MAX_RAW_SCORE = 258  # 233 + 25 (F1:10 + F2:8 + F3:7)  # Core 75 + Global 63 + Ormuz 55 + Mexico 30 + Friccion 25
 
 
 def get_alert_level(score: int) -> Dict:
@@ -78,6 +79,10 @@ async def collect_all_signals() -> Tuple[int, List[Dict]]:
         ("G12_YEN", get_g12_yen_pressure()),
         ("G13_CFTC_MOM", get_g13_cftc_momentum()),
         ("O6_FREIGHT", get_o6_freight()),
+        # Module 5: Friccion Real (25 pts max) - Debate Multi-IA Round 3
+        ("F1_USDT_P2P", get_f1_usdt_p2p()),
+        ("F2_ORO_FISICO", get_f2_oro_fisico()),
+        ("F3_TECH_BLUE", get_f3_tech_blue()),
     ]
 
     results = await asyncio.gather(*[task[1] for task in tasks], return_exceptions=True)
@@ -101,6 +106,7 @@ def generate_report(score_raw: int, signals: list, protocolo: dict) -> dict:
     glob = [s for s in signals if s.get("signal", "").startswith("G")]
     ormuz = [s for s in signals if s.get("signal", "").startswith("O")]
     mexico = [s for s in signals if s.get("signal", "").startswith("M")]
+    friccion = [s for s in signals if s.get("signal", "").startswith("F")]
 
     active = [s for s in signals if s.get("score", 0) > 0]
 
@@ -118,6 +124,7 @@ def generate_report(score_raw: int, signals: list, protocolo: dict) -> dict:
             "global_overlay": {"score": sum(s.get("score", 0) for s in glob), "max": 63, "signals": glob},
             "ormuz_coreografia": {"score": sum(s.get("score", 0) for s in ormuz), "max": 55, "signals": ormuz},
             "mexico_local": {"score": sum(s.get("score", 0) for s in mexico), "max": 30, "signals": mexico},
+            "friccion_real": {"score": sum(s.get("score", 0) for s in friccion), "max": 25, "signals": friccion},
         },
         "active_signals": len(active),
         "active_details": active,
