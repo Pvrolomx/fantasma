@@ -390,8 +390,12 @@ async def get_f3_tech_blue() -> Tuple[float, Dict]:
     tech_blue_rate = round(mx_price / APPLE_IPHONE_PRICE_USD, 4)
 
     # Spread: Apple MX price vs (Apple US * FIX Banxico)
+    # Baseline structural markup in Mexico: IVA 16% + import ~5% + margin ~10% = ~35%
+    # Only the DELTA above 35% is the friction signal
+    STRUCTURAL_MARKUP = 35.0  # % - IVA + aranceles + margen Apple MX
     theoretical_mxn = APPLE_IPHONE_PRICE_USD * fix
-    spread_pct = round(((mx_price - theoretical_mxn) / theoretical_mxn) * 100, 2)
+    raw_spread_pct = round(((mx_price - theoretical_mxn) / theoretical_mxn) * 100, 2)
+    spread_pct = round(raw_spread_pct - STRUCTURAL_MARKUP, 2)
 
     await _save_friction_snapshot('F3_TECH_BLUE', spread_pct, {
         'mx_price': mx_price, 'tech_blue_rate': tech_blue_rate, 'fix': fix,
@@ -427,6 +431,8 @@ async def get_f3_tech_blue() -> Tuple[float, Dict]:
         'tech_blue_rate': tech_blue_rate,
         'fix_banxico': fix,
         'spread_pct': spread_pct,
+        'raw_spread_pct': raw_spread_pct,
+        'structural_markup': STRUCTURAL_MARKUP,
         'source': source,
         'acceleration': accel,
         'status': status,
