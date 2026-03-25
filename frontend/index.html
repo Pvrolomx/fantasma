@@ -221,6 +221,9 @@
         'G12_YEN_PRESSURE': 'USD/JPY. Si el yen se fortalece (numero baja), carry traders venden pesos para pagar deudas en yenes. Gatillo mas rapido de unwind masivo del carry trade.',
         'G13_CFTC_MOMENTUM': 'Cambio semanal en posiciones de hedge funds en futuros MXN. Si los especuladores estan en maximo long peso y empiezan a voltear, es la senal mas temprana de que el carry trade se rompe.',
         'O6_FREIGHT': 'Chicago Fed Supply Chain Stress Index. Positivo = estres logistico global. Si sube con petroleo alto, la presion es de supply chain, no solo especulacion.',
+        'F1_USDT_P2P': 'Spread entre comprar USDT en Binance P2P con pesos vs tipo de cambio FIX de Banxico. Mide fuga de capital minorista fuera del sistema bancario. Si sube >2%, la gente esta pagando una prima por sacar su dinero del peso. Es el termometro mas rapido de desconfianza (12-36h de adelanto). 8 de 8 IAs convergieron en este indicador.',
+        'F2_ORO_FISICO': 'Premio que se paga por oro fisico en Mexico vs precio internacional convertido a MXN. El baseline normal es ~8% (IVA + margen joyeria). Si sube >15%, la gente esta corriendo al metal porque ya no confia en el peso electronico. Mide el instinto de supervivencia financiera. Adelanto 48-72h.',
+        'F3_TECH_BLUE': 'Dolar implicito de Apple Mexico. Se compara el precio oficial del iPhone 16 Pro Max en apple.com/mx ($30,999 MXN) vs apple.com ($1,199 USD). Si el spread neto (despues de restar 35% de IVA+aranceles) supera 10%, Apple ya precifica una devaluacion que el FIX de Banxico no refleja. Sus equipos de pricing usan costo de reposicion futuro. Bautizado Tech-Blue Dollar por GLM-5. Adelanto 5-10 dias.',
     };
 
     function showTip(signal) {
