@@ -18,10 +18,8 @@ import urllib.request
 import urllib.parse
 from datetime import datetime
 
-RESEND_API_KEY = "re_3TjH9vNV_ABkKQZHxufyPo9NXxWyPSihz"
-RESEND_URL = "https://api.resend.com/emails"
+EMAIL_SERVICE = "https://email.duendes.app/api/send"
 ALERT_TO = "pvrolomx@yahoo.com.mx"
-ALERT_FROM = "FANTASMA <onboarding@resend.dev>"
 
 # Umbrales criticos - si se cruzan, email ADICIONAL con asunto de emergencia
 CRITICAL_THRESHOLDS = {
@@ -44,20 +42,18 @@ def get_score():
 
 
 def send_email(subject, message):
-    """Send email via Resend API directly."""
+    """Send email via email.duendes.app (SendGrid) from expatadvisormx.com."""
     payload = json.dumps({
-        "from": ALERT_FROM,
-        "to": [ALERT_TO],
+        "to": ALERT_TO,
         "subject": subject,
-        "text": message,
+        "message": message,
+        "name": "FANTASMA Observatorio",
+        "sendFrom": "expatadvisormx.com",
     }).encode()
     req = urllib.request.Request(
-        RESEND_URL,
+        EMAIL_SERVICE,
         data=payload,
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": "Bearer " + RESEND_API_KEY,
-        }
+        headers={"Content-Type": "application/json"}
     )
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
