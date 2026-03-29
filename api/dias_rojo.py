@@ -51,6 +51,8 @@ RED_THRESHOLDS = {
     "F1_USDT_P2P": {"field": "spread_buy_pct", "op": ">", "threshold": 2.0, "label": "USDT P2P Spread"},
     "F2_ORO_FISICO": {"field": "estimated_premium_pct", "op": ">", "threshold": 15.0, "label": "Oro Fisico Premium"},
     "F3_TECH_BLUE": {"field": "spread_pct", "op": ">", "threshold": 10.0, "label": "Tech-Blue Dollar"},
+    "F4_REMESA": {"field": "spread_pct", "op": ">", "threshold": 1.5, "label": "Remesa Spread (Wise)"},
+    "F4_REMESA": {"field": "spread_pct", "op": ">", "threshold": 1.5, "label": "Remesa Spread (Wise)"},
 }
 
 

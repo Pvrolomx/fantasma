@@ -440,3 +440,205 @@ async def get_f3_tech_blue() -> Tuple[float, Dict]:
         'score': score,
         'max_score': 7,
     }
+
+
+# ============================================================
+# F4: REMESA SPREAD (Wise mid-rate vs FIX Banxico)
+# Endpoint publico Wise - no requiere API key
+# Convergencia: 5/8 IAs (Claude, DeepSeek, Copilot, Grok, Mistral)
+# Validado por Qwen (Colmena Externa): mid-market rate sin fees
+# Adelanto: 24-48 horas
+# ============================================================
+
+WISE_RATES_URL = 'https://wise.com/rates/history+live?source=USD&target=MXN&length=1&resolution=hourly&unit=day'
+
+
+async def _get_wise_midrate() -> float:
+    """
+    Get USD/MXN mid-market rate from Wise public endpoint.
+    No API key needed. Returns the latest rate.
+    """
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                WISE_RATES_URL,
+                headers={'User-Agent': 'Mozilla/5.0'},
+                timeout=10,
+            )
+            data = resp.json()
+            if data and isinstance(data, list):
+                # Get the most recent rate
+                latest = data[-1]
+                return float(latest.get('value', 0))
+    except Exception:
+        pass
+    return 0.0
+
+
+async def get_f4_remesa_spread() -> Tuple[float, Dict]:
+    """
+    F4: Remesa Spread - 5 pts max
+    Diferencial entre tipo de cambio Wise (mid-market, usado por
+    millones de personas para enviar remesas) y FIX Banxico.
+    Si Wise cotiza significativamente arriba del FIX, hay demanda
+    oculta de dolares en el canal de remesas.
+
+    Scoring (por spread %):
+    >3% = 5 pts (PRESION FUERTE - demanda de USD en remesas)
+    >2% = 4 pts (ESTRES)
+    >1.5% = 3 pts (TENSION)
+    >0.8% = 2 pts (ELEVADO)
+    >0.3% = 1 pt (NORMAL ALTO)
+    """
+    fix = await _get_fix_banxico()
+    wise_rate = await _get_wise_midrate()
+
+    if fix == 0 or wise_rate == 0:
+        return 0, {
+            'signal': 'F4_REMESA',
+            'error': 'No data from Wise or Banxico',
+            'score': 0, 'max_score': 5,
+        }
+
+    spread_pct = round(((wise_rate - fix) / fix) * 100, 2)
+
+    await _save_friction_snapshot('F4_REMESA', spread_pct, {
+        'wise_rate': wise_rate, 'fix': fix,
+    })
+    history = await _get_prev_friction('F4_REMESA')
+    accel = _calc_acceleration(spread_pct, history)
+
+    score = 0
+    status = 'NORMAL'
+    if spread_pct > 3:
+        score = 5
+        status = 'PRESION FUERTE - Demanda de USD en canal remesas'
+    elif spread_pct > 2:
+        score = 4
+        status = 'ESTRES - Wise cotiza muy arriba del FIX'
+    elif spread_pct > 1.5:
+        score = 3
+        status = 'TENSION - Spread remesas elevado'
+    elif spread_pct > 0.8:
+        score = 2
+        status = 'ELEVADO - Spread visible'
+    elif spread_pct > 0.3:
+        score = 1
+        status = 'NORMAL ALTO - Spread minimo detectable'
+
+    if accel.get('accel_3d', 0) > 15 and score > 0:
+        score = min(score + 1, 5)
+        status += ' + ACELERANDO'
+
+    return score, {
+        'signal': 'F4_REMESA',
+        'wise_midrate': wise_rate,
+        'fix_banxico': fix,
+        'spread_pct': spread_pct,
+        'acceleration': accel,
+        'status': status,
+        'note': 'Spread Wise mid-market vs FIX Banxico. Wise es el rate que usan millones para remesas. >1.5% = presion cambiaria desde flujos reales. Endpoint publico, sin API key.',
+        'score': score,
+        'max_score': 5,
+    }
+
+
+# ============================================================
+# F4: REMESA SPREAD (Wise mid-rate vs FIX Banxico)
+# Endpoint publico Wise - no requiere API key
+# Convergencia: 5/8 IAs (Claude, DeepSeek, Copilot, Grok, Mistral)
+# Validado por Qwen (Colmena Externa): mid-market rate sin fees
+# Adelanto: 24-48 horas
+# ============================================================
+
+WISE_RATES_URL = 'https://wise.com/rates/history+live?source=USD&target=MXN&length=1&resolution=hourly&unit=day'
+
+
+async def _get_wise_midrate() -> float:
+    """
+    Get USD/MXN mid-market rate from Wise public endpoint.
+    No API key needed. Returns the latest rate.
+    """
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                WISE_RATES_URL,
+                headers={'User-Agent': 'Mozilla/5.0'},
+                timeout=10,
+            )
+            data = resp.json()
+            if data and isinstance(data, list):
+                # Get the most recent rate
+                latest = data[-1]
+                return float(latest.get('value', 0))
+    except Exception:
+        pass
+    return 0.0
+
+
+async def get_f4_remesa_spread() -> Tuple[float, Dict]:
+    """
+    F4: Remesa Spread - 5 pts max
+    Diferencial entre tipo de cambio Wise (mid-market, usado por
+    millones de personas para enviar remesas) y FIX Banxico.
+    Si Wise cotiza significativamente arriba del FIX, hay demanda
+    oculta de dolares en el canal de remesas.
+
+    Scoring (por spread %):
+    >3% = 5 pts (PRESION FUERTE - demanda de USD en remesas)
+    >2% = 4 pts (ESTRES)
+    >1.5% = 3 pts (TENSION)
+    >0.8% = 2 pts (ELEVADO)
+    >0.3% = 1 pt (NORMAL ALTO)
+    """
+    fix = await _get_fix_banxico()
+    wise_rate = await _get_wise_midrate()
+
+    if fix == 0 or wise_rate == 0:
+        return 0, {
+            'signal': 'F4_REMESA',
+            'error': 'No data from Wise or Banxico',
+            'score': 0, 'max_score': 5,
+        }
+
+    spread_pct = round(((wise_rate - fix) / fix) * 100, 2)
+
+    await _save_friction_snapshot('F4_REMESA', spread_pct, {
+        'wise_rate': wise_rate, 'fix': fix,
+    })
+    history = await _get_prev_friction('F4_REMESA')
+    accel = _calc_acceleration(spread_pct, history)
+
+    score = 0
+    status = 'NORMAL'
+    if spread_pct > 3:
+        score = 5
+        status = 'PRESION FUERTE - Demanda de USD en canal remesas'
+    elif spread_pct > 2:
+        score = 4
+        status = 'ESTRES - Wise cotiza muy arriba del FIX'
+    elif spread_pct > 1.5:
+        score = 3
+        status = 'TENSION - Spread remesas elevado'
+    elif spread_pct > 0.8:
+        score = 2
+        status = 'ELEVADO - Spread visible'
+    elif spread_pct > 0.3:
+        score = 1
+        status = 'NORMAL ALTO - Spread minimo detectable'
+
+    if accel.get('accel_3d', 0) > 15 and score > 0:
+        score = min(score + 1, 5)
+        status += ' + ACELERANDO'
+
+    return score, {
+        'signal': 'F4_REMESA',
+        'wise_midrate': wise_rate,
+        'fix_banxico': fix,
+        'spread_pct': spread_pct,
+        'acceleration': accel,
+        'status': status,
+        'note': 'Spread Wise mid-market vs FIX Banxico. Wise es el rate que usan millones para remesas. >1.5% = presion cambiaria desde flujos reales. Endpoint publico, sin API key.',
+        'score': score,
+        'max_score': 5,
+    }

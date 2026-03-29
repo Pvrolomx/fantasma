@@ -17,7 +17,7 @@ from signals import (
     get_g6_google_trends, get_g7_volatility, get_fed_funds_rate,
     get_o1_brent, get_o2_gas_europe, get_o3_usdchf, get_o4_sofr, get_o5_war_risk,
     get_m1_usdmxn, get_m2_corn, get_m3_urea,
-    get_f1_usdt_p2p, get_f2_oro_fisico, get_f3_tech_blue,
+    get_f1_usdt_p2p, get_f2_oro_fisico, get_f3_tech_blue, get_f4_remesa_spread, get_f4_remesa_spread,
 )
 from protocolo_cero import check_protocolo_cero
 
@@ -29,7 +29,7 @@ ALERT_LEVELS = {
     (81, 100): {"level": "CRITICO", "emoji": "⚫", "action": "Modo defensivo total"},
 }
 
-MAX_RAW_SCORE = 258  # 233 + 25 (F1:10 + F2:8 + F3:7)  # Core 75 + Global 63 + Ormuz 55 + Mexico 30 + Friccion 25
+MAX_RAW_SCORE = 263  # 233 + 25 (F1:10 + F2:8 + F3:7)  # Core 75 + Global 63 + Ormuz 55 + Mexico 30 + Friccion 30
 
 
 def get_alert_level(score: int) -> Dict:
@@ -83,6 +83,8 @@ async def collect_all_signals() -> Tuple[int, List[Dict]]:
         ("F1_USDT_P2P", get_f1_usdt_p2p()),
         ("F2_ORO_FISICO", get_f2_oro_fisico()),
         ("F3_TECH_BLUE", get_f3_tech_blue()),
+        ("F4_REMESA", get_f4_remesa_spread()),
+        ("F4_REMESA", get_f4_remesa_spread()),
     ]
 
     results = await asyncio.gather(*[task[1] for task in tasks], return_exceptions=True)
@@ -124,7 +126,7 @@ def generate_report(score_raw: int, signals: list, protocolo: dict) -> dict:
             "global_overlay": {"score": sum(s.get("score", 0) for s in glob), "max": 63, "signals": glob},
             "ormuz_coreografia": {"score": sum(s.get("score", 0) for s in ormuz), "max": 55, "signals": ormuz},
             "mexico_local": {"score": sum(s.get("score", 0) for s in mexico), "max": 30, "signals": mexico},
-            "friccion_real": {"score": sum(s.get("score", 0) for s in friccion), "max": 25, "signals": friccion},
+            "friccion_real": {"score": sum(s.get("score", 0) for s in friccion), "max": 30, "signals": friccion},
         },
         "active_signals": len(active),
         "active_details": active,

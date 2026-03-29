@@ -22,4 +22,4 @@ __all__ = [
 
 from .debate_signals import get_g12_yen_pressure, get_c7_cetes_extranjeros, get_carry_trade_real
 from .debate2_signals import get_g13_cftc_momentum, get_o6_freight
-from .friccion import get_f1_usdt_p2p, get_f2_oro_fisico, get_f3_tech_blue
+from .friccion import get_f1_usdt_p2p, get_f2_oro_fisico, get_f3_tech_blue, get_f4_remesa_spread, get_f4_remesa_spread
