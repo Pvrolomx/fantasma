@@ -84,7 +84,6 @@ async def collect_all_signals() -> Tuple[int, List[Dict]]:
         ("F2_ORO_FISICO", get_f2_oro_fisico()),
         ("F3_TECH_BLUE", get_f3_tech_blue()),
         ("F4_REMESA", get_f4_remesa_spread()),
-        ("F4_REMESA", get_f4_remesa_spread()),
     ]
 
     results = await asyncio.gather(*[task[1] for task in tasks], return_exceptions=True)
