@@ -303,21 +303,23 @@
             case 'F4_REMESA':
                 if (s.spread_pct !== undefined) return s.spread_pct + '%';
                 break;
-            case 'F4_REMESA':
-                if (s.spread_pct !== undefined) return s.spread_pct + '%';
-                break;
         }
         return '\u2014';
     }
 
+    var WATCHLIST = {'F1_USDT_P2P': true, 'F3_TECH_BLUE': true};
     function signalRow(s) {
         if (s.error) return '<div class="flex justify-between text-gray-500"><span>' + s.signal + '</span><span>Error</span></div>';
         var pct = s.max_score ? Math.round((s.score/s.max_score)*100) : 0;
         var overflow = s.score > s.max_score;
         var color = overflow ? 'text-red-500 font-black' : pct > 60 ? 'text-red-400' : pct > 30 ? 'text-amber-400' : 'text-green-400';
         var val = displayVal(s);
-        return '<div class="flex justify-between items-center">' +
-            '<span class="text-gray-300 cursor-help border-b border-dotted border-gray-600" title="' + (TIPS[s.signal] || s.signal) + '" onclick="showTip(\'' + s.signal + '\')">' + s.signal + '</span>' +
+        var isWatch = WATCHLIST[s.signal];
+        var nameStyle = isWatch ? 'text-cyan-300 font-semibold' : 'text-gray-300';
+        var eyeIcon = isWatch ? '\u0020\u25C9 ' : '';
+        var rowBg = isWatch ? ' style="background:rgba(6,182,212,0.06);border-radius:4px;padding:2px 4px;margin:-2px -4px;"' : '';
+        return '<div class="flex justify-between items-center"' + rowBg + '>' +
+            '<span class="' + nameStyle + ' cursor-help border-b border-dotted border-gray-600" title="' + (TIPS[s.signal] || s.signal) + '" onclick="showTip(\'' + s.signal + '\')">' + eyeIcon + s.signal + '</span>' +
             '<div class="flex items-center gap-2">' +
                 '<span class="mono text-gray-400">' + val + '</span>' +
                 '<span class="mono font-bold ' + color + '">' + s.score + '/' + s.max_score + '</span>' +
