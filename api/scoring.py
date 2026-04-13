@@ -101,6 +101,31 @@ async def collect_all_signals() -> Tuple[int, List[Dict]]:
 
 def generate_report(score_raw: int, signals: list, protocolo: dict) -> dict:
     normalized = round((score_raw / MAX_RAW_SCORE) * 100)
+
+    # PISO MINIMO: Protocolo 0 e Indice de Manipulacion imponen score minimo
+    # Si el sistema detecta incoherencia, el score NO puede estar en verde
+    if protocolo.get("protocolo_0_active"):
+        alerts_count = protocolo.get("alerts_count", 0)
+        mi = protocolo.get("manipulation_index", {})
+        mi_val = mi.get("value", 0) if mi else 0
+
+        # Manipulacion EXTREMO (>25): piso 40 (ELEVADO)
+        if mi_val > 25:
+            normalized = max(normalized, 40)
+        # Manipulacion ALTO (>15): piso 30 (MODERADO)
+        elif mi_val > 15:
+            normalized = max(normalized, 30)
+        # Manipulacion MEDIO (>8): piso 25 (MODERADO)
+        elif mi_val > 8:
+            normalized = max(normalized, 25)
+
+        # 4+ alertas simultaneas: piso adicional +5
+        if alerts_count >= 4:
+            normalized = max(normalized, normalized + 5)
+        # 3 alertas: +3
+        elif alerts_count >= 3:
+            normalized = max(normalized, normalized + 3)
+
     alert = get_alert_level(normalized)
 
     core = [s for s in signals if s.get("signal", "").startswith("C")]
