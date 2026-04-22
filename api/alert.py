@@ -1,29 +1,24 @@
 """
-FANTASMA Alert Endpoint v2
-Briefing diario + alertas criticas por senal individual.
-
-Cron: 6:45 AM PV (12:45 UTC) via Vercel
-Email: pvrolomx@yahoo.com.mx via email.duendes.app
-
-2 modos:
-1. BRIEFING DIARIO: resumen ejecutivo siempre (score, senales activas, dias rojo, cambios)
-2. ALERTA CRITICA: email adicional inmediato si una senal cruza umbral peligroso
-
-Implementado: 29 Marzo 2026 por CD03
+FANTASMA Alert Endpoint v3
+Email minimalista (score + link) + Telegram (score + senales + link).
+Cron: 6:45 AM PV (12:45 UTC)
+Actualizado: 22 Apr 2026 por CD71
 """
 from http.server import BaseHTTPRequestHandler
 import json
 import os
 import urllib.request
-import urllib.parse
 from datetime import datetime
 
 RESEND_API_KEY = "re_3TjH9vNV_ABkKQZHxufyPo9NXxWyPSihz"
 RESEND_URL = "https://api.resend.com/emails"
 ALERT_TO = "pvrolomx@yahoo.com.mx"
 ALERT_FROM = "FANTASMA Observatorio <info@expatadvisormx.com>"
+DASHBOARD = "https://fantasma.duendes.app"
 
-# Umbrales criticos - si se cruzan, email ADICIONAL con asunto de emergencia
+BOT_TOKEN = "8498803967:AAEeq_jSQwOiWDXWLBYXXpzep18MVrCebj8"
+CHAT_ID = "6392026932"
+
 CRITICAL_THRESHOLDS = {
     "F1_USDT_P2P": {"field": "spread_buy_pct", "threshold": 2.0, "msg": "Fuga de capital via crypto P2P"},
     "F3_TECH_BLUE": {"field": "spread_pct", "threshold": 15.0, "msg": "Apple precifica devaluacion fuerte"},
@@ -34,9 +29,8 @@ CRITICAL_THRESHOLDS = {
 
 
 def get_score():
-    """Fetch current score from API"""
     try:
-        req = urllib.request.Request("https://fantasma.duendes.app/api/score")
+        req = urllib.request.Request(DASHBOARD + "/api/score")
         with urllib.request.urlopen(req, timeout=45) as resp:
             return json.loads(resp.read().decode())
     except Exception as e:
@@ -44,7 +38,6 @@ def get_score():
 
 
 def send_email(subject, message):
-    """Send email via Resend API from info@expatadvisormx.com."""
     payload = json.dumps({
         "from": ALERT_FROM,
         "to": [ALERT_TO],
@@ -54,142 +47,53 @@ def send_email(subject, message):
     req = urllib.request.Request(
         RESEND_URL,
         data=payload,
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": "Bearer " + RESEND_API_KEY,
-        }
+        headers={"Content-Type": "application/json", "Authorization": "Bearer " + RESEND_API_KEY}
     )
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
             return json.loads(resp.read().decode())
     except Exception as e:
-        return {"success": False, "error": str(e)}
+        return {"error": str(e)}
+
+
+def send_telegram(text):
+    try:
+        payload = json.dumps({
+            "chat_id": CHAT_ID,
+            "text": text,
+            "parse_mode": "Markdown",
+            "disable_web_page_preview": True
+        }).encode()
+        req = urllib.request.Request(
+            f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
+            data=payload,
+            headers={"Content-Type": "application/json"}
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return json.loads(resp.read().decode())
+    except Exception as e:
+        return {"error": str(e)}
 
 
 def check_critical_signals(data):
-    """Check if any signal crossed a critical threshold."""
     alerts = []
     all_signals = []
     for mod in data.get("modules", {}).values():
         all_signals.extend(mod.get("signals", []))
-
     for sig_name, config in CRITICAL_THRESHOLDS.items():
         for s in all_signals:
             if s.get("signal") == sig_name:
                 val = s.get(config["field"])
                 if val is not None and val > config["threshold"]:
-                    alerts.append({
-                        "signal": sig_name,
-                        "value": val,
-                        "threshold": config["threshold"],
-                        "msg": config["msg"],
-                    })
+                    alerts.append({"signal": sig_name, "value": val,
+                                   "threshold": config["threshold"], "msg": config["msg"]})
     return alerts
 
 
-def build_briefing(data):
-    """Build the daily briefing email."""
-    score = data.get("total_score", 0)
-    level = data.get("alert_level", "?")
-    emoji = data.get("alert_emoji", "")
-    action = data.get("recommended_action", "")
-    raw = data.get("raw_score", 0)
-    max_raw = data.get("max_raw", 263)
-    ts = data.get("timestamp", "")[:16]
-
-    # Module scores
-    mods = data.get("modules", {})
-    mod_lines = []
-    for name, display in [
-        ("core_mxn", "Core MXN"),
-        ("global_overlay", "Global"),
-        ("ormuz_coreografia", "Ormuz"),
-        ("mexico_local", "Mexico"),
-        ("friccion_real", "Friccion"),
-    ]:
-        m = mods.get(name, {})
-        mod_lines.append(f"  {display}: {m.get('score',0)}/{m.get('max',0)}")
-
-    # Active signals with values
-    active = data.get("active_details", [])
-    active_lines = []
-    for s in active:
-        sig = s.get("signal", "?")
-        sc = s.get("score", 0)
-        mx = s.get("max_score", 0)
-        # Get the most relevant value
-        val = s.get("value", s.get("spread_buy_pct", s.get("spread_pct",
-              s.get("estimated_premium_pct", s.get("spread_bps", "?")))))
-        active_lines.append(f"  {sig}: {val} ({sc}/{mx} pts)")
-
-    # Protocolo 0
-    p0 = data.get("protocolo_0", {})
-    p0_text = "Normal"
-    if p0.get("protocolo_0_active"):
-        p0_text = p0.get("severity", "ACTIVO")
-        mi = p0.get("manipulation_index", {})
-        if mi:
-            p0_text += f" | Manipulacion: {mi.get('value', '?')}"
-
-    # Dias en rojo summary
-    dr = data.get("dias_rojo", {})
-    dr_summary = dr.get("summary", {})
-    red_count = dr_summary.get("currently_red", 0)
-    red_total = dr_summary.get("total_monitored", 0)
-    red_signals = dr_summary.get("red_signals", [])
-    chronic = dr_summary.get("chronic_signals", [])
-
-    red_details = []
-    for sig_name in red_signals:
-        sig_data = dr.get("signals", {}).get(sig_name, {})
-        days = sig_data.get("consecutive_days", 0)
-        label = sig_data.get("label", sig_name)
-        red_details.append(f"  {label}: {days}d en rojo")
-
-    # Build message
-    msg = f"""{emoji} BRIEFING FANTASMA — {datetime.utcnow().strftime('%d/%m/%Y')}
-{'='*50}
-
-SCORE: {score}/100 {level}
-Raw: {raw}/{max_raw} | Accion: {action}
-
-MODULOS:
-{chr(10).join(mod_lines)}
-
-PROTOCOLO 0: {p0_text}
-
-SENALES ACTIVAS ({len(active)}):
-{chr(10).join(active_lines) if active_lines else '  Ninguna'}
-
-DIAS EN ROJO ({red_count}/{red_total}):
-{chr(10).join(red_details) if red_details else '  Todo limpio'}
-"""
-
-    if chronic:
-        msg += f"\n⚠️ CRONICAS (>30d en rojo): {', '.join(chronic)}\n"
-
-    # Friction module highlight
-    fr = mods.get("friccion_real", {})
-    fr_sigs = fr.get("signals", [])
-    if fr_sigs:
-        msg += f"\nFRICCION REAL ({fr.get('score',0)}/{fr.get('max',30)}):\n"
-        for s in fr_sigs:
-            sig = s.get("signal", "?")
-            sp = s.get("spread_buy_pct", s.get("spread_pct",
-                 s.get("estimated_premium_pct", "?")))
-            status = s.get("status", "")
-            accel = s.get("acceleration", {})
-            trend = accel.get("trend", "")
-            msg += f"  {sig}: {sp}% | {status}"
-            if trend and trend != "SIN DATOS":
-                msg += f" | {trend}"
-            msg += "\n"
-
-    msg += f"""
-{'='*50}
-Dashboard: https://fantasma.duendes.app
-"""
-    return msg
+def level_emoji(score):
+    if score >= 60: return "🔴"
+    if score >= 40: return "🟡"
+    return "🟢"
 
 
 class handler(BaseHTTPRequestHandler):
@@ -209,43 +113,50 @@ class handler(BaseHTTPRequestHandler):
 
         score = data.get("total_score", 0)
         level = data.get("alert_level", "?")
+        action = data.get("recommended_action", "")
+        em = level_emoji(score)
+        today = datetime.utcnow().strftime("%d/%m/%Y")
 
-        # 1. ALWAYS send daily briefing
-        briefing = build_briefing(data)
-        emoji = data.get("alert_emoji", "")
+        # Active signals
+        active = data.get("active_details", [])
+        active_names = [s.get("signal", "?") for s in active]
 
+        # Dias en rojo
+        dr = data.get("dias_rojo", {}).get("summary", {})
+        red_count = dr.get("currently_red", 0)
+        red_total = dr.get("total_monitored", 0)
+
+        # --- EMAIL: una sola linea + link ---
         if score >= 60:
-            subj = f"🚨 FANTASMA ALTO: {score}/100 — ACCION REQUERIDA"
+            email_subj = f"🚨 FANTASMA {score}/100 — {level} — ACCION REQUERIDA"
         elif score >= 40:
-            subj = f"⚠️ FANTASMA ELEVADO: {score}/100 — Monitorear"
+            email_subj = f"⚠️ FANTASMA {score}/100 — {level}"
         else:
-            subj = f"{emoji} FANTASMA Briefing: {score}/100 {level}"
+            email_subj = f"✅ FANTASMA {score}/100 — {level}"
 
-        briefing_result = send_email(subj, briefing)
-        results["briefing"] = {"sent": True, "score": score, "level": level}
+        email_body = f"{em} Score: {score}/100 — {level}\n{DASHBOARD}"
+        send_email(email_subj, email_body)
 
-        # 2. Check critical signals — send ADDITIONAL urgent email if triggered
+        # --- TELEGRAM: score + senales activas + link ---
+        tg_lines = [f"{em} *FANTASMA* — {today}",
+                    f"Score: *{score}/100* — {level}",
+                    f"Accion: {action}"]
+
+        if active_names:
+            tg_lines.append(f"Senales: {', '.join(active_names)}")
+
+        tg_lines.append(f"Dias rojo: {red_count}/{red_total}")
+        tg_lines.append(f"[Ver dashboard]({DASHBOARD})")
+
+        # Si hay criticas, agregar alerta
         critical = check_critical_signals(data)
         if critical:
-            crit_lines = []
+            tg_lines.insert(1, "🚨 *ALERTA CRITICA*")
             for c in critical:
-                crit_lines.append(f"🚨 {c['signal']}: {c['value']} (umbral: {c['threshold']})")
-                crit_lines.append(f"   → {c['msg']}")
+                tg_lines.append(f"⚠️ {c['signal']}: {c['value']} — {c['msg']}")
 
-            crit_msg = f"""🚨🚨🚨 ALERTA CRITICA FANTASMA 🚨🚨🚨
+        send_telegram("\n".join(tg_lines))
 
-{chr(10).join(crit_lines)}
-
-Score actual: {score}/100 {level}
-
-ACCION INMEDIATA REQUERIDA.
-Dashboard: https://fantasma.duendes.app
-"""
-            crit_subj = f"🚨🚨 CRITICO: {critical[0]['msg']} — {critical[0]['signal']}={critical[0]['value']}"
-            crit_result = send_email(crit_subj, crit_msg)
-            results["critical_alert"] = {
-                "sent": True,
-                "signals": [c["signal"] for c in critical],
-            }
-
+        results["done"] = True
+        results["score"] = score
         self.wfile.write(json.dumps(results, ensure_ascii=False).encode())
