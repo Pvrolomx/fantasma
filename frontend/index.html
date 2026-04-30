@@ -49,8 +49,9 @@
             </div>
             <div class="text-right">
                 <div id="timestamp" class="text-xs text-gray-500 mono"></div>
-                <button onclick="fetchScore()" class="mt-1 px-3 py-1 bg-white/10 rounded text-xs hover:bg-white/20">Actualizar</button>
-                <button id="install-btn" onclick="installApp()" class="mt-1 px-3 py-1 bg-red-600/30 border border-red-500/50 rounded text-xs hover:bg-red-600/50 hidden">Instalar App</button>
+                <button onclick="fetchScore()" class="mt-1 px-3 py-1 bg-white/10 rounded text-xs hover:bg-white/20" data-i18n="btn_refresh">Actualizar</button>
+                <button onclick="toggleLang()" class="mt-1 px-3 py-1 bg-white/10 rounded text-xs hover:bg-white/20 mono font-bold" id="lang-btn">EN</button>
+                <button id="install-btn" onclick="installApp()" class="mt-1 px-3 py-1 bg-red-600/30 border border-red-500/50 rounded text-xs hover:bg-red-600/50 hidden" data-i18n="btn_install">Instalar App</button>
             </div>
         </div>
 
@@ -190,6 +191,146 @@
 
     const API = window.location.origin + '/api';
     const COLORS = { BAJO:'#22c55e', MODERADO:'#eab308', ELEVADO:'#f97316', ALTO:'#ef4444', CRITICO:'#1f2937' };
+    const COLORS_EN = { LOW:'#22c55e', MODERATE:'#eab308', ELEVATED:'#f97316', HIGH:'#ef4444', CRITICAL:'#1f2937' };
+
+    // ============================================================
+    // I18N SYSTEM
+    // ============================================================
+    var currentLang = localStorage.getItem('fantasma_lang') || 'es';
+
+    var I18N = {
+        es: {
+            subtitle: 'Panel de Control de la Realidad \u2014 Fantasma v2',
+            btn_refresh: 'Actualizar', btn_install: 'Instalar App',
+            p0_title: 'PROTOCOLO 0 ACTIVO',
+            score_label: 'SCORE',
+            loading: 'Cargando...', loading_news: 'Cargando noticias...',
+            m1: 'M1: Pulso Macro', m2: 'M2: Coreografia (Ormuz)',
+            m3: 'M3: Impacto Local', m4: 'Protocolo 0: Coherencia',
+            m5: 'M5: Friccion Real', m5sub: '(paralelos)',
+            dias_title: 'Dias en Rojo', dias_en_rojo: 'en rojo',
+            dias_chronic: 'cronicas (>30d)',
+            history_title: 'Evolucion Diaria',
+            history_days: ['7 dias','14 dias','30 dias','90 dias'],
+            history_no_data: 'Sin datos historicos aun. Se acumulan dia a dia.',
+            history_no_change: 'Sin cambio vs ayer',
+            news_title: 'Noticias Relevantes',
+            news_critical: 'criticas', news_high: 'altas', news_total: 'total',
+            news_none: 'Sin noticias relevantes (score < 4)',
+            active_title: 'Senales Activas',
+            active_none: 'Sin senales activas',
+            no_data: 'Sin datos', error: 'Error',
+            close: 'Cerrar', no_desc: 'Sin descripcion disponible',
+            status_label: 'Estado:', alerts_label: 'Alertas:',
+            normal: 'Normal',
+            manip_label: 'Indice de Manipulacion',
+            manip_levels: {extreme:'EXTREMO', high:'ALTO', medium:'MEDIO', low:'BAJO'},
+            // Alert levels
+            levels: {BAJO:'BAJO',MODERADO:'MODERADO',ELEVADO:'ELEVADO',ALTO:'ALTO',CRITICO:'CRITICO'},
+            // Module bar names
+            mod_core:'Core MXN', mod_global:'Global', mod_ormuz:'Ormuz', mod_mexico:'Mexico', mod_friction:'Friccion',
+            // History table headers
+            hist_date:'Fecha', hist_score:'Score', hist_level:'Nivel', hist_signals:'Senales',
+            hist_vs_ayer: 'pts vs ayer',
+            // Chart labels
+            chart_total:'Score Total',
+            error_load: 'Error al cargar datos',
+            error_history: 'Error cargando historial',
+            error_news: 'Error cargando noticias',
+        },
+        en: {
+            subtitle: 'Reality Control Panel \u2014 Fantasma v2',
+            btn_refresh: 'Refresh', btn_install: 'Install App',
+            p0_title: 'PROTOCOL 0 ACTIVE',
+            score_label: 'SCORE',
+            loading: 'Loading...', loading_news: 'Loading news...',
+            m1: 'M1: Macro Pulse', m2: 'M2: Choreography (Hormuz)',
+            m3: 'M3: Local Impact', m4: 'Protocol 0: Coherence',
+            m5: 'M5: Real Friction', m5sub: '(parallel markets)',
+            dias_title: 'Days in Red', dias_en_rojo: 'in red',
+            dias_chronic: 'chronic (>30d)',
+            history_title: 'Daily Evolution',
+            history_days: ['7 days','14 days','30 days','90 days'],
+            history_no_data: 'No historical data yet. Accumulates daily.',
+            history_no_change: 'No change vs yesterday',
+            news_title: 'Relevant News',
+            news_critical: 'critical', news_high: 'high', news_total: 'total',
+            news_none: 'No relevant news (score < 4)',
+            active_title: 'Active Signals',
+            active_none: 'No active signals',
+            no_data: 'No data', error: 'Error',
+            close: 'Close', no_desc: 'No description available',
+            status_label: 'Status:', alerts_label: 'Alerts:',
+            normal: 'Normal',
+            manip_label: 'Manipulation Index',
+            manip_levels: {extreme:'EXTREME', high:'HIGH', medium:'MEDIUM', low:'LOW'},
+            levels: {BAJO:'LOW',MODERADO:'MODERATE',ELEVADO:'ELEVATED',ALTO:'HIGH',CRITICO:'CRITICAL'},
+            mod_core:'Core MXN', mod_global:'Global', mod_ormuz:'Hormuz', mod_mexico:'Mexico', mod_friction:'Friction',
+            hist_date:'Date', hist_score:'Score', hist_level:'Level', hist_signals:'Signals',
+            hist_vs_ayer: 'pts vs yesterday',
+            chart_total:'Total Score',
+            error_load: 'Error loading data',
+            error_history: 'Error loading history',
+            error_news: 'Error loading news',
+        }
+    };
+
+    function t(key) { return (I18N[currentLang] || I18N.es)[key] || (I18N.es)[key] || key; }
+    function tLevel(level) { return t('levels')[level] || level; }
+    function tManip(level) {
+        var m = t('manip_levels');
+        if (level === 'EXTREMO' || level === 'EXTREME') return m.extreme;
+        if (level === 'ALTO' || level === 'HIGH') return m.high;
+        if (level === 'MEDIO' || level === 'MEDIUM') return m.medium;
+        return m.low;
+    }
+
+    function toggleLang() {
+        currentLang = currentLang === 'es' ? 'en' : 'es';
+        localStorage.setItem('fantasma_lang', currentLang);
+        document.getElementById('lang-btn').textContent = currentLang === 'es' ? 'EN' : 'ES';
+        applyStaticLabels();
+        fetchScore();
+    }
+
+    function applyStaticLabels() {
+        // Static HTML elements
+        document.querySelector('[data-i18n="btn_refresh"]').textContent = t('btn_refresh');
+        document.querySelector('[data-i18n="btn_install"]').textContent = t('btn_install');
+        document.querySelector('p.text-gray-400').textContent = t('subtitle');
+        document.querySelector('#protocolo-banner .font-bold.text-red-400').textContent = t('p0_title');
+        document.getElementById('score-label').textContent = t('score_label');
+        // Module titles
+        var modTitles = document.querySelectorAll('.module-card h3');
+        if (modTitles[0]) modTitles[0].innerHTML = '&#x1F310; ' + t('m1');
+        if (modTitles[1]) modTitles[1].innerHTML = '&#x1F6E2; ' + t('m2');
+        if (modTitles[2]) modTitles[2].innerHTML = '&#x1F1F2;&#x1F1FD; ' + t('m3');
+        if (modTitles[3]) modTitles[3].innerHTML = '&#x1F50D; ' + t('m4');
+        if (modTitles[4]) modTitles[4].innerHTML = '&#x1F30A; ' + t('m5') + ' <span class="text-xs text-gray-500 font-normal">' + t('m5sub') + '</span>';
+        // Dias en rojo title
+        document.querySelector('#dias-rojo-section h3').innerHTML = '&#x1F525; ' + t('dias_title');
+        // History title
+        var histTitle = document.querySelector('#history-content').closest('.glass').querySelector('h3');
+        if (histTitle) histTitle.innerHTML = '&#x1F4C8; ' + t('history_title') + ' <span id="history-toggle" class="text-xs text-gray-500 ml-1">&#x25B6;</span>';
+        // History days dropdown
+        var sel = document.getElementById('history-days');
+        var dayLabels = t('history_days');
+        if (sel && dayLabels) { for (var i = 0; i < sel.options.length; i++) sel.options[i].text = dayLabels[i]; }
+        // News title
+        document.querySelector('#news-section h3').innerHTML = '&#x1F4F0; ' + t('news_title');
+        // Active signals title
+        var actTitle = document.querySelector('#active-signals').closest('.glass').querySelector('h3');
+        if (actTitle) actTitle.textContent = t('active_title');
+        // Close button in modal
+        var closeBtn = document.querySelector('#tip-modal button');
+        if (closeBtn) closeBtn.textContent = t('close');
+    }
+
+    // Set initial lang button text
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('lang-btn').textContent = currentLang === 'es' ? 'EN' : 'ES';
+        if (currentLang !== 'es') applyStaticLabels();
+    });
 
     const TIPS = {
         'C1_FIX': 'Tipo de cambio FIX de Banxico. Si sube >1.5% en un dia, hay presion sobre el peso.',
@@ -225,11 +366,10 @@
         'F2_ORO_FISICO': 'Premio que se paga por oro fisico en Mexico vs precio internacional convertido a MXN. El baseline normal es ~8% (IVA + margen joyeria). Si sube >15%, la gente esta corriendo al metal porque ya no confia en el peso electronico. Mide el instinto de supervivencia financiera. Adelanto 48-72h.',
         'F3_TECH_BLUE': 'Dolar implicito de Apple Mexico. Se compara el precio oficial del iPhone 16 Pro Max en apple.com/mx ($30,999 MXN) vs apple.com ($1,199 USD). Si el spread neto (despues de restar 35% de IVA+aranceles) supera 10%, Apple ya precifica una devaluacion que el FIX de Banxico no refleja. Sus equipos de pricing usan costo de reposicion futuro. Bautizado Tech-Blue Dollar por GLM-5. Adelanto 5-10 dias.',
         'F4_REMESA': 'Spread entre el tipo de cambio Wise (mid-market, usado por millones para enviar remesas) y el FIX de Banxico. Si Wise cotiza >1.5% arriba del FIX, hay demanda oculta de dolares en el canal de remesas. Las remesas son ~4% del PIB mexicano. Endpoint publico, sin API key. Validado por Qwen (Colmena Externa). Adelanto 24-48h.',
-        'F4_REMESA': 'Spread entre el tipo de cambio Wise (mid-market, usado por millones para enviar remesas) y el FIX de Banxico. Si Wise cotiza >1.5% arriba del FIX, hay demanda oculta de dolares en el canal de remesas. Las remesas son ~4% del PIB mexicano. Endpoint publico, sin API key. Validado por Qwen (Colmena Externa). Adelanto 24-48h.',
     };
 
     function showTip(signal) {
-        const tip = TIPS[signal] || 'Sin descripcion disponible';
+        const tip = TIPS[signal] || t('no_desc');
         document.getElementById('tip-title').textContent = signal;
         document.getElementById('tip-body').textContent = tip;
         const m = document.getElementById('tip-modal');
@@ -341,14 +481,14 @@
         if (!mi) return;
         var val = mi.value;
         var color = val > 25 ? '#ef4444' : val > 15 ? '#f97316' : val > 8 ? '#eab308' : '#22c55e';
-        var label = val > 25 ? 'EXTREMO' : val > 15 ? 'ALTO' : val > 8 ? 'MEDIO' : 'BAJO';
+        var label = tManip(val > 25 ? 'EXTREMO' : val > 15 ? 'ALTO' : val > 8 ? 'MEDIO' : 'BAJO');
         var bar = Math.min(val / 30 * 100, 100);
         var el = document.getElementById('manipulation-index');
         if (!el) return;
         el.innerHTML = '<div style="display:flex;align-items:center;gap:12px;">' +
             '<div style="flex:1;">' +
                 '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">' +
-                    '<span style="font-size:12px;color:#9ca3af;">Indice de Manipulacion</span>' +
+                    '<span style="font-size:12px;color:#9ca3af;">' + t('manip_label') + '</span>' +
                     '<span style="font-size:12px;font-weight:bold;color:' + color + ';">' + label + '</span>' +
                 '</div>' +
                 '<div style="width:100%;background:rgba(255,255,255,0.1);border-radius:4px;height:8px;">' +
@@ -371,8 +511,8 @@
         }
         var sum = diasData.summary || {};
         document.getElementById('dias-rojo-summary').textContent =
-            sum.currently_red + '/' + sum.total_monitored + ' en rojo' +
-            (sum.chronic_30d > 0 ? ' | ' + sum.chronic_30d + ' cronicas (>30d)' : '');
+            sum.currently_red + '/' + sum.total_monitored + ' ' + t('dias_en_rojo') +
+            (sum.chronic_30d > 0 ? ' | ' + sum.chronic_30d + ' ' + t('dias_chronic') : '');
         var entries = Object.entries(diasData.signals).sort(function(a,b) { return b[1].consecutive_days - a[1].consecutive_days; });
         var rows = '';
         for (var i = 0; i < entries.length; i++) {
@@ -403,7 +543,7 @@
             var res = await fetch(API + '/score');
             var d = await res.json();
 
-            document.getElementById('timestamp').textContent = new Date(d.timestamp).toLocaleString('es-MX');
+            document.getElementById('timestamp').textContent = new Date(d.timestamp).toLocaleString(currentLang === 'en' ? 'en-US' : 'es-MX');
 
             var ring = document.getElementById('score-ring');
             var isOver100 = d.total_score > 100;
@@ -412,17 +552,17 @@
             ring.style.setProperty('--ring-color', color);
             document.getElementById('score-value').textContent = d.total_score;
             document.getElementById('score-value').style.color = color;
-            document.getElementById('alert-level').textContent = d.alert_emoji + ' ' + d.alert_level;
-            document.getElementById('alert-level').style.color = color;
+            document.getElementById('alert-level').textContent = d.alert_emoji + ' ' + tLevel(d.alert_level);
+            document.getElementById('alert-level').style.color = (currentLang === 'en' ? COLORS_EN[tLevel(d.alert_level)] : null) || COLORS[d.alert_level] || color;
             document.getElementById('alert-action').textContent = d.recommended_action;
 
             var mods = d.modules;
             document.getElementById('module-bars').innerHTML = [
-                renderModuleBar('Core MXN', mods.core_mxn.score, mods.core_mxn.max),
-                renderModuleBar('Global', mods.global_overlay.score, mods.global_overlay.max),
-                renderModuleBar('Ormuz', mods.ormuz_coreografia.score, mods.ormuz_coreografia.max),
-                renderModuleBar('Mexico', mods.mexico_local.score, mods.mexico_local.max),
-                mods.friccion_real ? renderModuleBar('Friccion', mods.friccion_real.score, mods.friccion_real.max) : '',
+                renderModuleBar(t('mod_core'), mods.core_mxn.score, mods.core_mxn.max),
+                renderModuleBar(t('mod_global'), mods.global_overlay.score, mods.global_overlay.max),
+                renderModuleBar(t('mod_ormuz'), mods.ormuz_coreografia.score, mods.ormuz_coreografia.max),
+                renderModuleBar(t('mod_mexico'), mods.mexico_local.score, mods.mexico_local.max),
+                mods.friccion_real ? renderModuleBar(t('mod_friction'), mods.friccion_real.score, mods.friccion_real.max) : '',
             ].join('');
 
             document.getElementById('mod-core').innerHTML =
@@ -446,10 +586,10 @@
                 document.getElementById('protocolo-banner').classList.add('hidden');
             }
             document.getElementById('mod-protocolo').innerHTML = p0
-                ? '<div class="text-gray-400">Estado: ' + (p0.protocolo_0_active ? '<span class="text-red-400 font-bold">ACTIVO</span>' : '<span class="text-green-400">Normal</span>') + '</div>' +
+                ? '<div class="text-gray-400">' + t('status_label') + ' ' + (p0.protocolo_0_active ? '<span class="text-red-400 font-bold">' + (currentLang==='en'?'ACTIVE':'ACTIVO') + '</span>' : '<span class="text-green-400">' + t('normal') + '</span>') + '</div>' +
                   '<div class="text-gray-500 text-xs">' + p0.severity + '</div>' +
-                  '<div class="text-gray-500 text-xs">Alertas: ' + p0.alerts_count + '</div>'
-                : '<div class="text-gray-500">Sin datos</div>';
+                  '<div class="text-gray-500 text-xs">' + t('alerts_label') + ' ' + p0.alerts_count + '</div>'
+                : '<div class="text-gray-500">' + t('no_data') + '</div>';
 
             // Manipulation Index
             if (p0) renderManipulationIndex(p0);
@@ -457,14 +597,14 @@
             // Active signals
             document.getElementById('active-signals').innerHTML = d.active_details.map(function(s) {
                 return '<div class="glass rounded p-2">' + signalRow(s) + '</div>';
-            }).join('') || '<div class="text-gray-500">Sin senales activas</div>';
+            }).join('') || '<div class="text-gray-500">' + t('active_none') + '</div>';
 
             // Dias en Rojo
             if (d.dias_rojo) renderDiasRojo(d.dias_rojo);
 
         } catch(e) {
             console.error('Error:', e);
-            document.getElementById('alert-level').textContent = 'Error al cargar datos';
+            document.getElementById('alert-level').textContent = t('error_load');
             document.getElementById('alert-action').textContent = e.message;
         }
     }
@@ -489,13 +629,13 @@
                 var color = sum.direction === 'up' ? 'text-red-400' : 'text-green-400';
                 sumHtml = '<span class="' + color + '">' + arrow + ' ' + (sum.change > 0 ? '+' : '') + sum.change + ' pts vs ayer</span>';
             } else if (sum.change === 0 && sum.today) {
-                sumHtml = '<span class="text-gray-400">Sin cambio vs ayer</span>';
+                sumHtml = '<span class="text-gray-400">' + t('history_no_change') + '</span>';
             }
             document.getElementById('history-summary').innerHTML = sumHtml;
 
             var hist = d.history || [];
             if (hist.length === 0) {
-                document.getElementById('history-table').innerHTML = '<span class="text-gray-500">Sin datos historicos aun. Se acumulan dia a dia.</span>';
+                document.getElementById('history-table').innerHTML = '<span class="text-gray-500">' + t('history_no_data') + '</span>';
                 return;
             }
 
@@ -511,9 +651,9 @@
                 data: {
                     labels: labels,
                     datasets: [
-                        { label: 'Score Total', data: scores, borderColor: '#eab308', backgroundColor: 'rgba(234,179,8,0.1)', fill: true, tension: 0.3 },
-                        { label: 'Ormuz', data: ormuz, borderColor: '#ef4444', borderDash: [5,3], tension: 0.3 },
-                        { label: 'Mexico', data: mexico, borderColor: '#22c55e', borderDash: [5,3], tension: 0.3 },
+                        { label: t('chart_total'), data: scores, borderColor: '#eab308', backgroundColor: 'rgba(234,179,8,0.1)', fill: true, tension: 0.3 },
+                        { label: t('mod_ormuz'), data: ormuz, borderColor: '#ef4444', borderDash: [5,3], tension: 0.3 },
+                        { label: t('mod_mexico'), data: mexico, borderColor: '#22c55e', borderDash: [5,3], tension: 0.3 },
                     ]
                 },
                 options: {
@@ -527,7 +667,7 @@
             });
 
             var last5 = hist.slice(-5).reverse();
-            var tbl = '<table class="w-full"><tr class="text-gray-500"><td>Fecha</td><td>Score</td><td>Nivel</td><td>Senales</td></tr>';
+            var tbl = '<table class="w-full"><tr class="text-gray-500"><td>' + t('hist_date') + '</td><td>' + t('hist_score') + '</td><td>' + t('hist_level') + '</td><td>' + t('hist_signals') + '</td></tr>';
             last5.forEach(function(h) {
                 var sc = h.total_score > 100 ? '<span class="text-red-500 font-bold">' + h.total_score + '</span>' : h.total_score;
                 tbl += '<tr class="text-gray-400 border-t border-white/5"><td>' + h.date.slice(5) + '</td><td class="mono">' + sc + '</td><td>' + (h.alert_emoji||'') + ' ' + (h.alert_level||'') + '</td><td>' + (h.active_signals||0) + '</td></tr>';
@@ -536,7 +676,7 @@
             document.getElementById('history-table').innerHTML = tbl;
 
         } catch(e) {
-            document.getElementById('history-table').innerHTML = '<span class="text-gray-500">Error cargando historial</span>';
+            document.getElementById('history-table').innerHTML = '<span class="text-gray-500">' + t('error_history') + '</span>';
         }
     }
 
@@ -550,7 +690,7 @@
                 document.getElementById('news-list').innerHTML = '<span class="text-gray-500">Error: ' + d.error + '</span>';
                 return;
             }
-            var countText = d.criticas + ' criticas, ' + d.altas + ' altas / ' + d.total + ' total';
+            var countText = d.criticas + ' ' + t('news_critical') + ', ' + d.altas + ' ' + t('news_high') + ' / ' + d.total + ' ' + t('news_total');
             document.getElementById('news-count').textContent = countText;
             var html = '';
             if (d.silencio_sospechoso) {
@@ -569,7 +709,7 @@
                         '<div class="text-xs text-gray-500 mt-0.5">' + a.source + ' &middot; ' + a.date + '</div>' +
                     '</div></div>';
             });
-            document.getElementById('news-list').innerHTML = html || '<span class="text-gray-500">Sin noticias relevantes (score &lt; 4)</span>';
+            document.getElementById('news-list').innerHTML = html || '<span class="text-gray-500">' + t('news_none') + '</span>';
         } catch(e) {
             document.getElementById('news-list').innerHTML = '<span class="text-gray-500">Error cargando noticias</span>';
         }

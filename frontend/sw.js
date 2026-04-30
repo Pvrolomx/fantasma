@@ -1,4 +1,4 @@
-const CACHE_NAME = 'observatorio-v3-friccion';
+const CACHE_NAME = 'observatorio-v4-i18n';
 const urlsToCache = [
   '/',
   '/manifest.json'
