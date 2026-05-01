@@ -285,6 +285,36 @@
         return m.low;
     }
 
+    // Backend text translations (protocolo 0, recommended_action, severity, alert messages)
+    var BACKEND_EN = {
+        // Severity
+        'ALERTA ROJA - Datos no coherentes': 'RED ALERT - Incoherent data',
+        'ALERTA AMARILLA - Datos parcialmente no coherentes': 'YELLOW ALERT - Partially incoherent data',
+        // Recommended actions
+        'Normal': 'Normal',
+        'Monitorear': 'Monitor',
+        'Reducir exposicion MXN': 'Reduce MXN exposure',
+        'Cobertura urgente': 'Urgent hedging',
+        'Modo crisis': 'Crisis mode',
+        // Protocol 0 alert messages
+        'Petroleo en crisis pero VIX tranquilo. Mercado no esta priceando el riesgo.': 'Oil in crisis but VIX calm. Market is not pricing the risk.',
+        'Petroleo en crisis pero MXN no reacciona. El impacto viene con retraso.': 'Oil in crisis but MXN not reacting. Impact comes with delay.',
+        'SOFR estable pero CHF en movimiento. Estres oculto en el sistema.': 'SOFR stable but CHF moving. Hidden stress in the system.',
+        'Desfase anormal entre petroleo y tipo de cambio. Indice': 'Abnormal gap between oil and exchange rate. Index',
+        // Manipulation index
+        'Indice de Manipulacion': 'Manipulation Index',
+    };
+    function tBackend(text) {
+        if (currentLang !== 'en' || !text) return text;
+        // Direct match
+        if (BACKEND_EN[text]) return BACKEND_EN[text];
+        // Partial match for messages with dynamic values (e.g. "Indice: 45.95")
+        for (var k in BACKEND_EN) {
+            if (text.indexOf(k) === 0) return BACKEND_EN[k] + text.substring(k.length);
+        }
+        return text;
+    }
+
     function toggleLang() {
         currentLang = currentLang === 'es' ? 'en' : 'es';
         localStorage.setItem('fantasma_lang', currentLang);
@@ -591,7 +621,7 @@
             document.getElementById('score-value').style.color = color;
             document.getElementById('alert-level').textContent = d.alert_emoji + ' ' + tLevel(d.alert_level);
             document.getElementById('alert-level').style.color = (currentLang === 'en' ? COLORS_EN[tLevel(d.alert_level)] : null) || COLORS[d.alert_level] || color;
-            document.getElementById('alert-action').textContent = d.recommended_action;
+            document.getElementById('alert-action').textContent = tBackend(d.recommended_action);
 
             var mods = d.modules;
             document.getElementById('module-bars').innerHTML = [
@@ -615,16 +645,16 @@
             var p0 = d.protocolo_0;
             if (p0 && p0.protocolo_0_active) {
                 document.getElementById('protocolo-banner').classList.remove('hidden');
-                document.getElementById('protocolo-msg').textContent = p0.severity;
+                document.getElementById('protocolo-msg').textContent = tBackend(p0.severity);
                 document.getElementById('protocolo-alerts').innerHTML = p0.alerts.map(function(a) {
-                    return '<div class="glass-red rounded p-2 text-xs"><strong>' + a.name + '</strong>: ' + a.message + '</div>';
+                    return '<div class="glass-red rounded p-2 text-xs"><strong>' + a.name + '</strong>: ' + tBackend(a.message) + '</div>';
                 }).join('');
             } else {
                 document.getElementById('protocolo-banner').classList.add('hidden');
             }
             document.getElementById('mod-protocolo').innerHTML = p0
                 ? '<div class="text-gray-400">' + t('status_label') + ' ' + (p0.protocolo_0_active ? '<span class="text-red-400 font-bold">' + (currentLang==='en'?'ACTIVE':'ACTIVO') + '</span>' : '<span class="text-green-400">' + t('normal') + '</span>') + '</div>' +
-                  '<div class="text-gray-500 text-xs">' + p0.severity + '</div>' +
+                  '<div class="text-gray-500 text-xs">' + tBackend(p0.severity) + '</div>' +
                   '<div class="text-gray-500 text-xs">' + t('alerts_label') + ' ' + p0.alerts_count + '</div>'
                 : '<div class="text-gray-500">' + t('no_data') + '</div>';
 
