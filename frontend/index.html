@@ -368,11 +368,48 @@
         'F4_REMESA': 'Spread entre el tipo de cambio Wise (mid-market, usado por millones para enviar remesas) y el FIX de Banxico. Si Wise cotiza >1.5% arriba del FIX, hay demanda oculta de dolares en el canal de remesas. Las remesas son ~4% del PIB mexicano. Endpoint publico, sin API key. Validado por Qwen (Colmena Externa). Adelanto 24-48h.',
     };
 
+    const TIPS_EN = {
+        'C1_FIX': 'Banxico FIX exchange rate. If it rises >1.5% in a day, the peso is under pressure.',
+        'C2_TIIE': '28-day interbank rate. The cost of money in Mexico. High spread vs Fed = country risk.',
+        'C3_CFTC': 'Speculative positions on the peso (Chicago futures). If hedge funds bet against the peso, bad signal.',
+        'C4_RESERVAS': 'Banxico international reserves. If they drop fast, the central bank is burning ammo to defend the peso.',
+        'C5_SPREAD': 'MX vs US bond yield spread. Wider = Mexico must pay more to attract investment.',
+        'G1_VIX': 'Wall Street fear index. >25 nervous, >35 panic. Measures expected S&P 500 volatility.',
+        'G2_DXY': 'Dollar index vs currency basket. If it rises, the dollar strengthens and emerging currencies suffer.',
+        'G3_US10Y': 'US 10-year Treasury yield. Rises = money flows out of emerging markets into the US.',
+        'G4_HY_SPREAD': 'Junk vs investment grade bond spread. Widens = credit tightens, corporate stress.',
+        'G5_COPPER': 'Copper price. Proxy for China and global physical economy health. Falls = slowdown.',
+        'G6_GOOGLE_TRENDS': 'Searches for "Mexico crisis", "buy dollars", etc. Measures everyday Mexican panic levels.',
+        'G7_VOLATILITY': 'Historical peso volatility (20 days). High = unstable market, sharp moves.',
+        'O1_BRENT': 'Brent crude oil. Direct Hormuz thermometer. Pre-war $65, now >$100. Every dollar raise hits your gas.',
+        'O2_GAS_EU': 'European natural gas (TTF). Qatar exports via Hormuz. If it rises, Europe enters energy crisis.',
+        'O3_USDCHF': 'Dollar vs Swiss franc. If CHF rises, real money is fleeing to Switzerland. Ultimate safe haven.',
+        'O4_SOFR': 'US overnight rate. If it spikes, there is stress in the financial plumbing of the system.',
+        'O5_WAR_RISK': 'Brent-WTI spread. Normal $2-4. Above $8 means a "Hormuz tax" on every Gulf barrel.',
+        'M1_USDMXN': 'Your exchange rate. Above $20 is your alarm. Every peso rise makes all imports more expensive.',
+        'M2_CORN': 'International corn price. Mexico imports a lot. If it rises >10% monthly, tortilla prices will follow.',
+        'M3_UREA': 'Fertilizers (proxy: natural gas). Hormuz blocks Gulf fertilizers. No fertilizer, no harvest.',
+        'G8_CARRY_TRADE': 'Japan-Mexico rate spread. The carry trade (borrow cheap yen, buy MX bonds) keeps the peso strong. 82% of MXN transactions happen outside Mexico. If the spread drops below 5%, funds exit and the peso falls.',
+        'G9_SWAP_LINES': 'Fed swap lines. If activated (>$1B), the global financial system is in emergency. In 2008 they hit $583B. The nuclear signal.',
+        'G10_INTERBANK': 'SOFR-OBFR spread. Measures whether banks trust each other for overnight lending. If they diverge >10bps, hidden stress. Spiked before 2008, March 2020, and SVB 2023.',
+        'G11_DRAGON': 'USD/CNY. If the yuan weakens (>7.2), China is under pressure. Impacts commodities, emerging markets, and Gulf oil flow.',
+        'C6_CONTRARIAN': 'Analyst consensus vs reality. If privileged-info experts say X, prepare for not-X. In 2025 they said peso to 21, it went to 17.5.',
+        'C7_CETES_NR': 'Rate paid on Cetes to foreigners at weekly auction. If it rises sharply (>8%), they demand more premium for Mexico risk. If it drops while peso stays strong, a phantom force is propping up the exchange rate.',
+        'G12_YEN_PRESSURE': 'USD/JPY. If the yen strengthens (number drops), carry traders sell pesos to pay yen debts. Fastest trigger for massive carry trade unwind.',
+        'G13_CFTC_MOMENTUM': 'Weekly change in hedge fund MXN futures positions. If speculators are max long peso and start flipping, it is the earliest signal the carry trade is breaking.',
+        'O6_FREIGHT': 'Chicago Fed Supply Chain Stress Index. Positive = global logistics stress. If it rises with high oil, the pressure is supply chain, not just speculation.',
+        'F1_USDT_P2P': 'Spread between buying USDT on Binance P2P with pesos vs Banxico FIX rate. Measures retail capital flight outside the banking system. If it rises >2%, people are paying a premium to get their money out of the peso. Fastest distrust thermometer (12-36h lead). 8 out of 8 AIs converged on this indicator.',
+        'F2_ORO_FISICO': 'Premium paid for physical gold in Mexico vs international spot converted to MXN. Normal baseline is ~8% (VAT + jewelry margin). If it rises >15%, people are running to metal because they no longer trust electronic pesos. Measures financial survival instinct. 48-72h lead.',
+        'F3_TECH_BLUE': 'Apple Mexico implicit dollar. Compares the official iPhone 16 Pro Max price on apple.com/mx ($30,999 MXN) vs apple.com ($1,199 USD). If the net spread (after subtracting 35% VAT+tariffs) exceeds 10%, Apple is already pricing a devaluation that Banxico FIX does not reflect. Their pricing teams use future replacement cost. Named Tech-Blue Dollar by GLM-5. 5-10 day lead.',
+        'F4_REMESA': 'Spread between Wise exchange rate (mid-market, used by millions for remittances) and Banxico FIX. If Wise quotes >1.5% above FIX, there is hidden dollar demand in the remittance channel. Remittances are ~4% of Mexican GDP. Public endpoint, no API key needed. 24-48h lead.',
+    };
+
     function showTip(signal) {
-        const tip = TIPS[signal] || t('no_desc');
+        var tips = currentLang === 'en' ? TIPS_EN : TIPS;
+        var tip = tips[signal] || t('no_desc');
         document.getElementById('tip-title').textContent = signal;
         document.getElementById('tip-body').textContent = tip;
-        const m = document.getElementById('tip-modal');
+        var m = document.getElementById('tip-modal');
         m.classList.remove('hidden');
         m.classList.add('flex');
     }
@@ -459,7 +496,7 @@
         var eyeIcon = isWatch ? '\u0020\u25C9 ' : '';
         var rowBg = isWatch ? ' style="background:rgba(6,182,212,0.06);border-radius:4px;padding:2px 4px;margin:-2px -4px;"' : '';
         return '<div class="flex justify-between items-center"' + rowBg + '>' +
-            '<span class="' + nameStyle + ' cursor-help border-b border-dotted border-gray-600" title="' + (TIPS[s.signal] || s.signal) + '" onclick="showTip(\'' + s.signal + '\')">' + eyeIcon + s.signal + '</span>' +
+            '<span class="' + nameStyle + ' cursor-help border-b border-dotted border-gray-600" title="' + ((currentLang==='en'?TIPS_EN:TIPS)[s.signal] || s.signal) + '" onclick="showTip(\'' + s.signal + '\')">' + eyeIcon + s.signal + '</span>' +
             '<div class="flex items-center gap-2">' +
                 '<span class="mono text-gray-400">' + val + '</span>' +
                 '<span class="mono font-bold ' + color + '">' + s.score + '/' + s.max_score + '</span>' +
