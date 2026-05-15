@@ -9,6 +9,7 @@ from .ormuz import get_o1_brent, get_o2_gas_europe, get_o3_usdchf, get_o4_sofr, 
 from .mexico import get_m1_usdmxn, get_m2_corn, get_m3_urea
 from .carry_trade import get_g8_carry_trade
 from .fantasma_extra import get_g9_swap_lines, get_g10_interbank, get_g11_dragon, get_c6_contrarian
+from .g14_yen_mxn_velocity import get_g14_yen_mxn_velocity
 
 __all__ = [
     'get_c1_fix', 'get_c2_tiie', 'get_c3_cftc', 'get_c4_reservas', 'get_c5_spread',
@@ -18,6 +19,7 @@ __all__ = [
     'get_m1_usdmxn', 'get_m2_corn', 'get_m3_urea',
     'get_g8_carry_trade',
     'get_g9_swap_lines', 'get_g10_interbank', 'get_g11_dragon', 'get_c6_contrarian',
+    'get_g14_yen_mxn_velocity',
 ]
 
 from .debate_signals import get_g12_yen_pressure, get_c7_cetes_extranjeros, get_carry_trade_real
