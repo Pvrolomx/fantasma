@@ -111,11 +111,13 @@ def generate_report(score_raw: int, signals: list, protocolo: dict) -> dict:
         mi_val = mi.get("value", 0) if mi else 0
 
         if mi_val > 25:
-            normalized = max(normalized, 40)
+            piso = 25 + min(15, round((mi_val - 25) / 3))
+            normalized = max(normalized, piso)
         elif mi_val > 15:
-            normalized = max(normalized, 30)
+            normalized = max(normalized, 28)
         elif mi_val > 8:
-            normalized = max(normalized, 25)
+            normalized = max(normalized, 20)
+        # mi_val <= 8: sin piso, score libre
 
         if alerts_count >= 4:
             normalized = max(normalized, normalized + 5)
