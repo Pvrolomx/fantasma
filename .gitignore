@@ -5,3 +5,8 @@ __pycache__/
 data/
 .env
 *.bak_*
+*.bak.*
+api/*_out.txt
+api/test_*.py
+api/patch_*.py
+api/signals/new_g1_vix.py
