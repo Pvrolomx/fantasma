@@ -1,6 +1,6 @@
 #!/bin/bash
 # OBSERVATORIO - Daily cron script
-# Runs at 6:45 AM CT (12:45 UTC)
+# Runs at 6:45 AM hora Mexico (America/Mexico_City). Cron: 45 6 * * *
 # Saves daily snapshot to data/history/
 
 cd /home/pvrolo/repos/fantasma/api
