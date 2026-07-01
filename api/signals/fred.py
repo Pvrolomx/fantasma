@@ -38,29 +38,34 @@ async def fetch_fred_series(series_id: str, days: int = 30) -> list:
 async def get_g1_vix() -> Tuple[float, Dict]:
     """
     G1: VIX (8 pts max)
-    - VIX >25 → 4 pts
-    - VIX >35 → 8 pts
+    - VIX >25 -> 4 pts
+    - VIX >35 -> 8 pts
+    Fuente: Yahoo Finance (^VIX). Cambiado de FRED VIXCLS el 2026-06-02
+    porque FRED requiere API key (ausente) y actualiza con retraso.
+    Yahoo da el VIX en tiempo real sin key.
     """
-    data = await fetch_fred_series("VIXCLS", days=5)
-    
-    if not data:
+    from .yahoo import fetch_yahoo_quote
+    data = await fetch_yahoo_quote("^VIX")
+
+    if "error" in data or not data.get("current"):
         return 0, {"signal": "G1_VIX", "error": "No data"}
-    
-    # FRED devuelve más reciente primero
-    current_vix = float(data[0]["value"]) if data[0]["value"] != "." else 0
-    
+
+    current_vix = float(data.get("current", 0))
+
     score = 0
     if current_vix > 35:
         score = 8
     elif current_vix > 25:
         score = 4
-    
+
     return score, {
         "signal": "G1_VIX",
         "value": round(current_vix, 2),
         "score": score,
-        "max_score": 8
+        "max_score": 8,
+        "source": "yahoo:^VIX"
     }
+
 
 async def get_g3_us10y() -> Tuple[float, Dict]:
     """
