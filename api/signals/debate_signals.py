@@ -47,66 +47,61 @@ async def get_g12_yen_pressure() -> Tuple[float, Dict]:
 
     Si USD/JPY baja (yen se fortalece), los carry traders que pidieron
     prestado en yenes tienen que vender sus posiciones en pesos.
-    
+
     Mide: cambio porcentual semanal de USD/JPY.
     - Yen se fortalece >2% en una semana -> 5 pts (CRITICO)
     - Yen se fortalece >1% -> 3 pts (WARNING)
     - Yen se fortalece >0.5% -> 1 pt (ATENCION)
     - Yen estable o debilitandose -> 0 pts
+
+    FUENTE: Yahoo Finance (JPY=X), unificada con G14. Migrada de FRED/DEXJPUS
+    el 2026-06-27 por CD02: FRED requiere API key (mismo fallo que tumbo el VIX
+    el 2-jun) y no actualiza a diario -> dato estancado. Yahoo no necesita key,
+    se actualiza diario, y es la misma fuente que ya usa G14 (evita divergencia).
     """
     try:
-        async with httpx.AsyncClient() as client:
-            resp = await client.get(
-                "https://api.stlouisfed.org/fred/series/observations",
-                params={
-                    "series_id": "DEXJPUS",
-                    "api_key": FRED_API_KEY,
-                    "file_type": "json",
-                    "sort_order": "desc",
-                    "limit": 10,
-                },
-                timeout=15,
-            )
-            if resp.status_code == 200:
-                data = resp.json()
-                obs = [o for o in data.get("observations", []) if o.get("value", ".") != "."]
-                if len(obs) >= 2:
-                    current = float(obs[0]["value"])
-                    # Find value from ~5 trading days ago
-                    prev_idx = min(4, len(obs) - 1)
-                    previous = float(obs[prev_idx]["value"])
-                    weekly_change_pct = ((current - previous) / previous) * 100
-                    
-                    # Negative change = yen strengthening (USD/JPY falling)
-                    yen_strength = -weekly_change_pct  # positive = yen getting stronger
-                    
-                    score = 0
-                    if yen_strength > 2.0:
-                        score = 5
-                    elif yen_strength > 1.0:
-                        score = 3
-                    elif yen_strength > 0.5:
-                        score = 1
+        from signals.g14_yen_mxn_velocity import fetch_yahoo_closes
+    except ImportError:
+        from api.signals.g14_yen_mxn_velocity import fetch_yahoo_closes
 
-                    status = "CRITICO" if score >= 5 else "WARNING" if score >= 3 else "ATENCION" if score >= 1 else "NORMAL"
+    try:
+        closes = await fetch_yahoo_closes("JPY=X")
 
-                    return score, {
-                        "signal": "G12_YEN_PRESSURE",
-                        "value": round(current, 2),
-                        "usdjpy_current": round(current, 2),
-                        "usdjpy_prev_week": round(previous, 2),
-                        "weekly_change_pct": round(weekly_change_pct, 2),
-                        "yen_strengthening_pct": round(yen_strength, 2),
-                        "status": status,
-                        "note": "Yen fuerte = carry traders venden pesos. Catalizador mas rapido de unwind.",
-                        "score": score,
-                        "max_score": 5,
-                    }
+        if len(closes) >= 6:
+            current = closes[-1]
+            previous = closes[-6]  # ~5 dias habiles atras
+            weekly_change_pct = ((current - previous) / previous) * 100
+
+            # Negative change = yen strengthening (USD/JPY falling)
+            yen_strength = -weekly_change_pct  # positive = yen getting stronger
+
+            score = 0
+            if yen_strength > 2.0:
+                score = 5
+            elif yen_strength > 1.0:
+                score = 3
+            elif yen_strength > 0.5:
+                score = 1
+
+            status = "CRITICO" if score >= 5 else "WARNING" if score >= 3 else "ATENCION" if score >= 1 else "NORMAL"
+
+            return score, {
+                "signal": "G12_YEN_PRESSURE",
+                "value": round(current, 2),
+                "usdjpy_current": round(current, 2),
+                "usdjpy_prev_week": round(previous, 2),
+                "weekly_change_pct": round(weekly_change_pct, 2),
+                "yen_strengthening_pct": round(yen_strength, 2),
+                "status": status,
+                "note": "Yen fuerte = carry traders venden pesos. Catalizador mas rapido de unwind.",
+                "source": "yahoo:JPY=X",
+                "score": score,
+                "max_score": 5,
+            }
     except Exception as e:
         return 0, {"signal": "G12_YEN_PRESSURE", "error": str(e), "score": 0, "max_score": 5}
 
-    return 0, {"signal": "G12_YEN_PRESSURE", "value": None, "note": "Sin datos FRED", "score": 0, "max_score": 5}
-
+    return 0, {"signal": "G12_YEN_PRESSURE", "value": None, "note": "Sin datos Yahoo", "score": 0, "max_score": 5}
 
 # ============================================================
 # C7: CETES EXTRANJEROS (Foreign appetite for MX debt)
