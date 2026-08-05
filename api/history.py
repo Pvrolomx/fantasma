@@ -202,6 +202,11 @@ async def run_and_save():
     sys.path.insert(0, os.path.dirname(__file__))
     from scoring import run_scoring
     report = await run_scoring()
+    try:
+        from signal_health import compute_signal_health
+        report["signal_health"] = compute_signal_health(HISTORY_DIR, report)
+    except Exception as e:
+        report["signal_health"] = {"error": str(e)}
     path = await save_snapshot(report)
     print(f"Snapshot saved: {path}")
     print(f"Score: {report['total_score']} - {report['alert_level']}")

@@ -60,11 +60,12 @@ async def get_m2_corn() -> Tuple[float, Dict]:
 
 async def get_m3_urea() -> Tuple[float, Dict]:
     """M3: Fertilizantes/Urea proxy (5 pts max). Escasez agricola."""
-    data = await fetch_yahoo_quote("UAN=F")
+    # UAN=F (futuros de fertilizante) es un ticker MUERTO en Yahoo: devuelve
+    # result=None y truena en cada fetch (ensuciaba cron.log a diario). NG=F
+    # (gas natural) ya era el proxy real via fallback; ahora es el primario.
+    data = await fetch_yahoo_quote("NG=F")
     if "error" in data:
-        data = await fetch_yahoo_quote("NG=F")
-        if "error" in data:
-            return 0, {"signal": "M3_UREA", "error": "No proxy available"}
+        return 0, {"signal": "M3_UREA", "error": "No proxy available"}
     current = data.get("current", 0)
     closes = data.get("closes", [])
     monthly_change_pct = 0

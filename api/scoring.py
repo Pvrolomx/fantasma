@@ -18,7 +18,6 @@ from signals import (
     get_o1_brent, get_o2_gas_europe, get_o3_usdchf, get_o4_sofr, get_o5_war_risk,
     get_m1_usdmxn, get_m2_corn, get_m3_urea,
     get_f1_usdt_p2p, get_f2_oro_fisico, get_f3_tech_blue, get_f4_remesa_spread, get_f4_remesa_spread,
-    get_g14_yen_mxn_velocity,
 )
 from protocolo_cero import check_protocolo_cero
 
@@ -30,7 +29,7 @@ ALERT_LEVELS = {
     (81, 100): {"level": "CRITICO", "emoji": "⚫", "action": "Modo defensivo total"},
 }
 
-MAX_RAW_SCORE = 271  # 263 + 8 (G14_YEN_MXN_VELOCITY)
+MAX_RAW_SCORE = 263  # G14 degradado a informativo 01-ago-2026 (no suma; ver tests/g14_minitest.py)
 
 
 def get_alert_level(score: int) -> Dict:
@@ -38,6 +37,49 @@ def get_alert_level(score: int) -> Dict:
         if low <= score <= high:
             return info
     return ALERT_LEVELS[(81, 100)]
+
+
+# --- P5: deteccion de dato rancio (CD02, 12-jul-2026) ---
+# Los mercados cierran vie 13:00 CST y reabren dom 17:00 CST.
+# El cron corre TODOS los dias 6:45 CST, incluidos sab y dom.
+# Sin esta marca, el JSON de fin de semana sirve datos del ultimo cierre
+# con fecha de hoy y alert_level BAJO, como si hubiera medido algo.
+# NO apagamos el cron: eso rompe la serie historica. El archivo se DECLARA rancio.
+def get_data_staleness() -> dict:
+    """Marca si el snapshot corre sobre datos del ultimo cierre en vez de datos vivos."""
+    try:
+        from zoneinfo import ZoneInfo
+        now = datetime.now(ZoneInfo("America/Mexico_City"))
+    except Exception:
+        # Fallback: UTC-6 aprox. Solo afecta el borde de medianoche; el cron
+        # corre 6:45 CST, muy lejos de ese borde.
+        from datetime import timedelta
+        now = datetime.utcnow() - timedelta(hours=6)
+
+    wd = now.weekday()  # 0=lunes ... 5=sabado, 6=domingo
+    if wd == 5:
+        return {
+            "is_stale": True,
+            "reason": "WEEKEND_SABADO",
+            "note": "Mercados cerrados. Datos del ultimo cierre (viernes). El score NO es una medicion de hoy.",
+            "last_close": "viernes",
+            "checked_local": now.isoformat(),
+        }
+    if wd == 6:
+        return {
+            "is_stale": True,
+            "reason": "WEEKEND_DOMINGO",
+            "note": "Mercados cerrados. Datos del ultimo cierre (viernes). El score NO es una medicion de hoy.",
+            "last_close": "viernes",
+            "checked_local": now.isoformat(),
+        }
+    return {
+        "is_stale": False,
+        "reason": "DIA_HABIL",
+        "note": "Datos vivos.",
+        "last_close": None,
+        "checked_local": now.isoformat(),
+    }
 
 
 async def collect_all_signals() -> Tuple[int, List[Dict]]:
@@ -64,10 +106,8 @@ async def collect_all_signals() -> Tuple[int, List[Dict]]:
         ("G9_SWAPS", get_g9_swap_lines()),
         ("G10_INTERBANK", get_g10_interbank()),
         ("G11_DRAGON", get_g11_dragon()),
-        ("G12_YEN", get_g12_yen_pressure()),
+        ("G12_YEN_PRESSURE", get_g12_yen_pressure()),
         ("G13_CFTC_MOM", get_g13_cftc_momentum()),
-        # G14: YEN/MXN Correlation Velocity (8 pts max) - Agregado 2026-05-15
-        ("G14_YEN_MXN_VELOCITY", get_g14_yen_mxn_velocity()),
         # Module 3: Ormuz / Coreografia (55 pts max)
         ("O1_BRENT", get_o1_brent()),
         ("O2_GAS_EU", get_o2_gas_europe()),
@@ -104,25 +144,11 @@ async def collect_all_signals() -> Tuple[int, List[Dict]]:
 def generate_report(score_raw: int, signals: list, protocolo: dict) -> dict:
     normalized = round((score_raw / MAX_RAW_SCORE) * 100)
 
-    # PISO MINIMO: Protocolo 0 e Indice de Manipulacion imponen score minimo
-    if protocolo.get("protocolo_0_active"):
-        alerts_count = protocolo.get("alerts_count", 0)
-        mi = protocolo.get("manipulation_index", {})
-        mi_val = mi.get("value", 0) if mi else 0
-
-        if mi_val > 25:
-            piso = 25 + min(15, round((mi_val - 25) / 3))
-            normalized = max(normalized, piso)
-        elif mi_val > 15:
-            normalized = max(normalized, 28)
-        elif mi_val > 8:
-            normalized = max(normalized, 20)
-        # mi_val <= 8: sin piso, score libre
-
-        if alerts_count >= 4:
-            normalized = max(normalized, normalized + 5)
-        elif alerts_count >= 3:
-            normalized = max(normalized, normalized + 3)
+    # PROTOCOLO 0 DEGRADADO A INFORMATIVO (05-ago-2026).
+    # Antes imponia un PISO al score via Indice de Manipulacion (anclado a Brent).
+    # tests/test_tercios_p1.py: ni Brent ni DXY explican al peso sobre retornos
+    # (r global ~0.04); el indice inflaba el numero con ruido (hoy forzaba 28
+    # sobre un raw de ~13). Protocolo 0 ahora solo es contexto; NO toca el score.
 
     alert = get_alert_level(normalized)
 
@@ -136,6 +162,7 @@ def generate_report(score_raw: int, signals: list, protocolo: dict) -> dict:
 
     return {
         "timestamp": datetime.utcnow().isoformat(),
+        "data_staleness": get_data_staleness(),
         "total_score": normalized,
         "raw_score": score_raw,
         "max_raw": MAX_RAW_SCORE,

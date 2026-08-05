@@ -54,7 +54,7 @@ async def get_g14_yen_mxn_velocity() -> Tuple[float, Dict]:
             "signal": "G14_YEN_MXN_VELOCITY",
             "error": "Datos insuficientes para calcular correlacion",
             "score": 0,
-            "max_score": 8,
+            "max_score": 0,
         }
 
     corr_5d = pearson_corr(usdjpy[-5:], usdmxn[-5:])
@@ -63,21 +63,16 @@ async def get_g14_yen_mxn_velocity() -> Tuple[float, Dict]:
     velocidad_24h = round(abs(corr_5d - corr_5d_ayer), 3)
     divergencia = round(corr_5d - corr_20d, 3)
 
+    # DEGRADADO A INFORMATIVO (01-ago-2026, CD03).
+    # Mini-test (tests/g14_minitest.py) probo con 74 dias que G14 es ruido:
+    # no predice el peso (max|r|=0.097), no anticipa al yen (r~0.02-0.05),
+    # y su tesis interna tiene el signo invertido. Ya NO suma al score.
+    # Se conservan los datos y un status descriptivo, solo como contexto.
     score = 0
-    status = "NORMAL"
-
-    if corr_5d < -0.7 and velocidad_24h > 0.3:
-        score = 8
-        status = "UNWIND ACTIVO - Correlacion extrema con aceleracion brusca"
-    elif corr_5d < -0.7:
-        score = 6
-        status = "ALERTA - Correlacion yen/peso muy alta, carry trade bajo presion"
-    elif corr_5d < -0.5:
-        score = 4
-        status = "ATENCION - Presion creciente de unwind"
-    elif velocidad_24h > 0.3:
-        score = 3
-        status = "ACELERACION - Cambio brusco en correlacion en 24h"
+    if corr_5d < -0.5 or velocidad_24h > 0.3:
+        status = "INFORMATIVO - movimiento en correlacion (no suma al score; ver g14_minitest)"
+    else:
+        status = "INFORMATIVO - normal"
 
     return score, {
         "signal": "G14_YEN_MXN_VELOCITY",
@@ -93,5 +88,5 @@ async def get_g14_yen_mxn_velocity() -> Tuple[float, Dict]:
             "82% transacciones MXN ocurren fuera de Mexico (BIS)."
         ),
         "score": score,
-        "max_score": 8,
+        "max_score": 0,
     }

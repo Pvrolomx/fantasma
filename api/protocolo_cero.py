@@ -127,11 +127,13 @@ async def check_protocolo_cero(signals: list) -> Dict:
                     })
 
     protocolo_active = len(alerts) > 0
-    severity = "NORMAL"
+    # DEGRADADO A INFORMATIVO (05-ago-2026): ya no impone piso al score
+    # (ver scoring.generate_report). Contexto, sin lenguaje de alarma roja.
+    severity = "INFORMATIVO"
     if any(a["severity"] in ("HIGH", "EXTREME") for a in alerts):
-        severity = "ALERTA ROJA - Datos no coherentes"
+        severity = "INFORMATIVO - divergencias fuertes (contexto, no alarma)"
     elif any(a["severity"] == "MEDIUM" for a in alerts):
-        severity = "PRECAUCION - Divergencias detectadas"
+        severity = "INFORMATIVO - divergencias moderadas (contexto)"
 
     result = {
         "protocolo_0_active": protocolo_active,
