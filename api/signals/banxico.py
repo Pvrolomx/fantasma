@@ -29,6 +29,20 @@ async def fetch_series(series_id: str, days: int = 30) -> list:
             print(f"Error fetching {series_id}: {e}")
             return []
 
+async def get_banxico_target_rate() -> float:
+    """Tasa objetivo de Banxico (SF61745) = tasa de politica. Reemplaza el
+    fallback hardcodeado 7.0 de G8, que congelaba el carry spread."""
+    data = await fetch_series("SF61745", days=30)
+    for d in reversed(data):
+        v = (d.get("dato", "N/E") or "").replace(",", "").strip()
+        if v not in ("N/E", ""):
+            try:
+                return float(v)
+            except ValueError:
+                pass
+    return 6.5  # fallback si la API falla (tasa vigente ago-2026)
+
+
 def calculate_daily_change(data: list) -> float:
     """Calcula cambio porcentual diario."""
     if len(data) < 2:

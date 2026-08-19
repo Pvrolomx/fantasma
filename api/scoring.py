@@ -19,6 +19,7 @@ from signals import (
     get_m1_usdmxn, get_m2_corn, get_m3_urea,
     get_f1_usdt_p2p, get_f2_oro_fisico, get_f3_tech_blue, get_f4_remesa_spread, get_f4_remesa_spread,
 )
+from signals.banxico import get_banxico_target_rate
 from protocolo_cero import check_protocolo_cero
 
 ALERT_LEVELS = {
@@ -86,6 +87,7 @@ async def collect_all_signals() -> Tuple[int, List[Dict]]:
     signals = []
     total_score = 0
     fed_rate = await get_fed_funds_rate()
+    banxico_rate = await get_banxico_target_rate()
 
     tasks = [
         # Module 1: Core MXN (75 pts max)
@@ -102,7 +104,7 @@ async def collect_all_signals() -> Tuple[int, List[Dict]]:
         ("G5_COPPER", get_g5_copper()),
         ("G6_TRENDS", get_g6_google_trends()),
         ("G7_VOL", get_g7_volatility()),
-        ("G8_CARRY", get_g8_carry_trade()),
+        ("G8_CARRY", get_g8_carry_trade(banxico_rate)),
         ("G9_SWAPS", get_g9_swap_lines()),
         ("G10_INTERBANK", get_g10_interbank()),
         ("G11_DRAGON", get_g11_dragon()),
