@@ -10,14 +10,14 @@ import os
 import urllib.request
 from datetime import datetime
 
-RESEND_API_KEY = "re_3TjH9vNV_ABkKQZHxufyPo9NXxWyPSihz"
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
 RESEND_URL = "https://api.resend.com/emails"
 ALERT_TO = "pvrolomx@yahoo.com.mx"
 ALERT_FROM = "FANTASMA Observatorio <info@expatadvisormx.com>"
 DASHBOARD = "https://fantasma.duendes.app"
 
-BOT_TOKEN = "8498803967:AAEeq_jSQwOiWDXWLBYXXpzep18MVrCebj8"
-CHAT_ID = "6392026932"
+BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "6392026932")
 
 CRITICAL_THRESHOLDS = {
     "F1_USDT_P2P": {"field": "spread_buy_pct", "threshold": 2.0, "msg": "Fuga de capital via crypto P2P"},
@@ -38,6 +38,8 @@ def get_score():
 
 
 def send_email(subject, message):
+    if not RESEND_API_KEY:
+        return {"skipped": "RESEND_API_KEY no configurada"}
     payload = json.dumps({
         "from": ALERT_FROM,
         "to": [ALERT_TO],
@@ -57,6 +59,8 @@ def send_email(subject, message):
 
 
 def send_telegram(text):
+    if not BOT_TOKEN:
+        return {"skipped": "TELEGRAM_BOT_TOKEN no configurado"}
     try:
         payload = json.dumps({
             "chat_id": CHAT_ID,
