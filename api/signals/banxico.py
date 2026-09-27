@@ -64,21 +64,56 @@ def calculate_trend(data: list, days: int = 5) -> bool:
     except (ValueError, KeyError):
         return False
 
+def calculate_cumulative(data: list, days: int) -> float:
+    """Cambio % acumulado entre hace `days` observaciones y la ultima. 0.0 si no hay serie."""
+    if len(data) < days + 1:
+        return 0.0
+    try:
+        vals = [float(d["dato"].replace(",", "")) for d in data]
+        a, b = vals[-(days + 1)], vals[-1]
+        return ((b - a) / a) * 100 if a else 0.0
+    except (ValueError, KeyError):
+        return 0.0
+
+
 async def get_c1_fix() -> Tuple[float, Dict]:
-    """C1: Tipo de Cambio FIX (20 pts max)"""
-    data = await fetch_series("SF43718", days=10)
+    """C1: Tipo de Cambio FIX (20 pts max).
+
+    P14 (27-sep-2026): antes solo miraba el cambio DIARIO (>1.5% para el primer
+    escalon) mas un bono por racha estrictamente creciente. Un deslizamiento como el
+    de sep-2026 (+4.95% en 20 dias) marcaba CERO. Ahora puntua tambien por acumulado
+    de 5 y 20 dias, y se toma el MAXIMO de los tres componentes -- no la suma -- para
+    no contar el mismo movimiento dos veces.
+    Umbrales calibrados sobre los 190 snapshots (20-mar a 27-sep-2026):
+      5d  >1.5% = 9.2% de los dias | >2.5% = 3.2%
+      20d >3.0% = 7.1% de los dias | >4.5% = ~3%
+    """
+    data = await fetch_series("SF43718", days=40)
 
     daily_change = calculate_daily_change(data)
     trend_up = calculate_trend(data, 5)
+    change_5d = calculate_cumulative(data, 5)
+    change_20d = calculate_cumulative(data, 20)
 
-    score = 0
+    # componente salto (lo que ya existia)
+    s_daily = 0
     if abs(daily_change) > 4:
-        score = 20
+        s_daily = 20
     elif abs(daily_change) > 2.5:
-        score = 15
+        s_daily = 15
     elif abs(daily_change) > 1.5:
-        score = 10
+        s_daily = 10
 
+    # componente deslizamiento (nuevo). DIRECCIONAL a proposito: solo cuenta cuando el
+    # peso se DEPRECIA (FIX al alza). Simetrico prendia 9 dias de abr-2026 con el peso
+    # FORTALECIENDOSE -- el mismo defecto de magnitud-sin-signo del G4_HY_SPREAD.
+    # Backtest 190 snapshots: simetrico 28 dias encendidos vs direccional 14, y estos
+    # 14 son todos depreciacion real. El salto diario SI queda simetrico (un brinco
+    # de >1.5% en un dia es shock en cualquier direccion).
+    s_5d = 10 if change_5d > 2.5 else (5 if change_5d > 1.5 else 0)
+    s_20d = 10 if change_20d > 4.5 else (5 if change_20d > 3.0 else 0)
+
+    score = max(s_daily, s_5d, s_20d)
     if trend_up:
         score = min(score + 5, 20)
 
@@ -88,10 +123,14 @@ async def get_c1_fix() -> Tuple[float, Dict]:
         "signal": "C1_FIX",
         "value": current_rate,
         "daily_change_pct": round(daily_change, 2),
+        "change_5d_pct": round(change_5d, 2),
+        "change_20d_pct": round(change_20d, 2),
         "trend_5d_up": trend_up,
+        "score_components": {"diario": s_daily, "5d": s_5d, "20d": s_20d},
         "score": score,
         "max_score": 20
     }
+
 
 async def get_c2_tiie(fed_funds_rate: float = 5.25) -> Tuple[float, Dict]:
     """C2: TIIE 28 dias (10 pts max)"""
